@@ -10,6 +10,8 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<NhaTuyenDungRepository>();
 builder.Services.AddScoped<CongViecRepository>();
 builder.Services.AddScoped<UngVienRepository>();
+builder.Services.AddScoped<ViTriLamViecRepository>();
+builder.Services.AddScoped<CvUngVienRepository>();
 builder.Services.AddSession();
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();

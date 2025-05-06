@@ -7,6 +7,9 @@ using System.Text;
 using UglyToad.PdfPig;
 using System.Net.Http.Json;
 using System.Globalization;
+using System.Text.Json;
+using System.Net.Http;
+using static AI_OLLAMA_CV_JOB.Controllers.HomeController;
 
 namespace AI_OLLAMA_CV_JOB.Controllers
 {
@@ -16,18 +19,29 @@ namespace AI_OLLAMA_CV_JOB.Controllers
         private readonly CongViecRepository congViecRepository;
         private readonly NhaTuyenDungRepository nhaTuyenDungRepository;
         private readonly UngVienRepository ungVienRepository;
+        private readonly ViTriLamViecRepository viTriLamViecRepository;
+        private readonly CvUngVienRepository cvUngVienRepository;
 
         public HomeController(ILogger<HomeController> logger,
             NhaTuyenDungRepository nhaTuyenDungRepository,
             UngVienRepository ungVienRepository,
-            CongViecRepository congViecRepository)
+            CongViecRepository congViecRepository,
+            ViTriLamViecRepository viTriLamViecRepository,
+            CvUngVienRepository cvUngVienRepository)
         {
             _logger = logger;
             this.nhaTuyenDungRepository = nhaTuyenDungRepository;
             this.ungVienRepository = ungVienRepository;
             this.congViecRepository = congViecRepository;
+            this.cvUngVienRepository = cvUngVienRepository;
+            this.viTriLamViecRepository = viTriLamViecRepository;
         }
-
+        public class DataToPY
+        {
+            public List<CongViec> CongViecs { get; set; } = new List<CongViec>();
+            public List<ViTriLamViec> ViTriLamViecs { get; set; } = new List<ViTriLamViec>();
+            public List<CvUngVien> CvUngViens { get; set; } = new List<CvUngVien>();
+        }
         public async Task<IActionResult> Index()
         {
             var CongViecs = await congViecRepository.GetTatCaCongViec();
@@ -187,6 +201,93 @@ namespace AI_OLLAMA_CV_JOB.Controllers
         {
             HttpContext.Session.Clear();
             return RedirectToAction("Index", "Home");
+        }
+
+
+
+        /*[HttpGet]
+        public async Task<IActionResult> GetDataForAI()
+        {
+            var CongViecs = (await congViecRepository.GetTatCaCongViec())?.ToList() ?? new List<CongViec>();
+            var CvUngViens = (await cvUngVienRepository.GetTatCaCV())?.ToList() ?? new List<CvUngVien>();
+            var ViTriLamViecs = (await viTriLamViecRepository.GetTatCa())?.ToList() ?? new List<ViTriLamViec>();
+
+            var dataToPY = new DataToPY
+            {
+                CongViecs = CongViecs,
+                CvUngViens = CvUngViens,
+                ViTriLamViecs = ViTriLamViecs
+            };
+
+            // Return data as JSON
+            var response = new
+            {
+                success = true,
+                data = dataToPY,
+                message = "Data retrieved successfully",
+                statusCode = 200
+            };
+
+            return Json(response);
+        }
+        public async Task<bool> SendDataToPythonAPI()
+        {
+            using (var client = new HttpClient())
+            {
+                var apiUrl = "http://localhost:5000/process_data";
+                var jsonData = await GetDataForAI();
+
+                var content = new StringContent(JsonSerializer.Serialize(jsonData), Encoding.UTF8, "application/json");
+
+                var response = await client.PostAsync(apiUrl, content);
+
+                return response.IsSuccessStatusCode;
+            }
+        }*/
+        [HttpPost]
+        public async Task<IActionResult> ProcessDataForAI()
+        {
+            var CongViecs = (await congViecRepository.GetTatCaCongViec())?.ToList() ?? new List<CongViec>();
+            var CvUngViens = (await cvUngVienRepository.GetTatCaCV())?.ToList() ?? new List<CvUngVien>();
+            var ViTriLamViecs = (await viTriLamViecRepository.GetTatCa())?.ToList() ?? new List<ViTriLamViec>();
+
+            var dataToPY = new DataToPY
+            {
+                CongViecs = CongViecs,
+                CvUngViens = CvUngViens,
+                ViTriLamViecs = ViTriLamViecs
+            };
+
+            var jsonData = JsonSerializer.Serialize(new
+            {
+                success = true,
+                data = dataToPY
+            }, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            });
+
+            // Gửi đến Flask API
+            var apiUrl = "http://localhost:5000/process_data";
+            var content = new StringContent(jsonData, Encoding.UTF8, "application/json");
+
+            var httpClient = new HttpClient();
+            var response = await httpClient.PostAsync(apiUrl, content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                return Ok(new { success = true, message = "Dữ liệu đã được gửi thành công tới Python API" });
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                return StatusCode((int)response.StatusCode, new
+                {
+                    success = false,
+                    message = "Gửi dữ liệu thất bại",
+                    error = errorContent
+                });
+            }
         }
     }
 }
