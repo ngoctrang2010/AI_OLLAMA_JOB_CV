@@ -188,5 +188,22 @@ namespace AI_OLLAMA_CV_JOB.Controllers
             HttpContext.Session.Clear();
             return RedirectToAction("Index", "Home");
         }
+
+        public IActionResult ChatAI()
+        {
+            var ungVienId = HttpContext.Session.GetInt32("UngVienId");
+
+            if (ungVienId == null)
+            {
+                return RedirectToAction("Login", "Home");
+            }
+
+            return RedirectToAction("ChatBox", "Home");
+        }
+        public IActionResult ChatBox()
+        {
+            // Sau này bạn có thể hiển thị giao diện chat tại đây
+            return View();
+        }
     }
 }
