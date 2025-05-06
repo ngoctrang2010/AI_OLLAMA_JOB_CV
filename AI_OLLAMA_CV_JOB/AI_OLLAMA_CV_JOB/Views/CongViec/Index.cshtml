@@ -1,0 +1,25 @@
+﻿@{
+    ViewData["Title"] = "Kết quả chạy embedding";
+}
+
+<h2>Kết quả chạy script</h2>
+
+@if (!string.IsNullOrEmpty(ViewBag.Output))
+{
+    <pre>@ViewBag.Output</pre>
+}
+@if (!string.IsNullOrEmpty(ViewBag.Error))
+{
+    <pre style="color:red;">@ViewBag.Error</pre>
+}
+
+<h2>Dữ liệu đã lưu (saved_data.txt)</h2>
+
+@if (!string.IsNullOrEmpty(ViewBag.SavedData))
+{
+    <pre>@ViewBag.SavedData</pre>
+}
+else
+{
+    <p>Không có dữ liệu được lưu.</p>
+}
