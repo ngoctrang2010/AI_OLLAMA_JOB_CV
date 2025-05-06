@@ -65,16 +65,17 @@
     .chat-body {
         flex: 1;
         overflow-y: auto;
-        padding: 25px;
+        padding: 16px;
         background-color: #f8f9fb;
         scroll-behavior: smooth;
     }
 
     .message {
-        margin-bottom: 20px;
+        margin-bottom: 12px;
         display: flex;
         align-items: flex-start;
         animation: fadeIn 0.3s ease-out;
+        margin-bottom: 10px; /* khoảng cách giữa các tin nhắn */
     }
 
     @@keyframes fadeIn {
@@ -98,18 +99,17 @@
     }
 
     .avatar {
-        width: 38px;
-        height: 38px;
+        width: 36px;
+        height: 36px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin: 0 10px;
+        margin: 0 8px;
+        overflow: hidden;
     }
 
     .message.user .avatar {
-        background-color: #e3f2fd;
-        color: #2979ff;
         order: 2;
     }
 
@@ -119,24 +119,28 @@
     }
 
     .message.user .content {
-        border-radius: 18px 18px 0 18px;
-        background: linear-gradient(135deg, #2979ff, #1565c0);
+        border-radius: 18px 18px 4px 18px; /* bo góc dưới phải ít hơn giống đuôi Zalo */
+        background: linear-gradient(135deg, #0084ff, #005fcc);
         color: white;
-        box-shadow: 0 2px 8px rgba(41, 121, 255, 0.3);
+        box-shadow: 0 2px 8px rgba(0, 132, 255, 0.3);
     }
 
     .message.ai .content {
-        border-radius: 18px 18px 18px 0;
-        background-color: white;
+        border-radius: 18px 18px 18px 4px; /* bo góc dưới trái ít hơn giống đuôi Zalo */
+        background-color: #f1f0f0;
         color: #333;
         box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
 
+
     .message .content {
-        padding: 14px 18px;
-        max-width: 65%;
+        white-space: normal; /* để text tự xuống dòng khi đầy khung */
+        word-break: break-word; /* bẻ dòng khi từ dài quá khung */
+        overflow-wrap: anywhere; /* bẻ dòng bất cứ đâu nếu cần */
+        max-width: 70%; /* tăng độ rộng khung */
         line-height: 1.6;
         font-size: 15px;
+        padding: 10px 16px;
     }
 
     .timestamp {
