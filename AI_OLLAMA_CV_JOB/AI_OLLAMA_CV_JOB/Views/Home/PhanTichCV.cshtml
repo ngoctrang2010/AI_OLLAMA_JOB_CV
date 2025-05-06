@@ -1,0 +1,17 @@
+﻿@{
+    ViewData["Title"] = "Phân tích CV & Gợi ý công việc";
+}
+
+<h2>Phân tích CV: @ViewBag.FileName</h2>
+
+<div class="alert alert-primary mt-3">
+    <strong>Kết quả phân tích từ AI:</strong>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <pre>@ViewBag.Suggestions</pre>
+    </div>
+</div>
+
+<a class="btn btn-secondary mt-3" href="/">Quay về danh sách công việc</a>

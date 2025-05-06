@@ -1,0 +1,124 @@
+﻿@model AI_OLLAMA_CV_JOB.Models.CongViec
+
+@{
+    ViewData["Title"] = "Chi Tiết Công Việc";
+}
+<!-- Bootstrap 5 -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+    .fade-in {
+        animation: fadeIn 0.8s ease-in-out;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .info-item {
+        margin-bottom: 1rem;
+        padding: 1rem;
+        border-left: 4px solid #0d6efd;
+        background-color: #f8f9fa;
+        border-radius: 0.5rem;
+    }
+
+        .info-item i {
+            color: #0d6efd;
+            margin-right: 0.5rem;
+        }
+
+    .info-label {
+        font-weight: 600;
+        color: #343a40;
+    }
+
+    .apply-btn {
+        font-size: 1.1rem;
+        padding: 0.6rem 1.5rem;
+        border-radius: 0.5rem;
+    }
+
+    .card-body {
+        padding-bottom: 4rem;
+    }
+</style>
+
+<div class="container mt-5 mb-5 fade-in">
+    <div class="card shadow-lg border-0">
+        <div class="card-body p-5">
+            <h2 class="text-primary mb-4">
+                <i class="fas fa-briefcase"></i> @Model.TenCongViec
+            </h2>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="info-item">
+                        <i class="fas fa-align-left"></i>
+                        <span class="info-label">Mô tả công việc:</span><br />
+                        @Model.MoTaCongViec
+                    </div>
+
+                    <div class="info-item">
+                        <i class="fas fa-list-check"></i>
+                        <span class="info-label">Yêu cầu công việc:</span><br />
+                        @Model.YeuCauCongViec
+                    </div>
+
+                    <div class="info-item">
+                        <i class="fas fa-gift"></i>
+                        <span class="info-label">Phúc lợi:</span><br />
+                        @Model.PhucLoi
+                    </div>
+
+                    <div class="info-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span class="info-label">Địa điểm & Thời gian:</span><br />
+                        @Model.DiaDiemThoiGian
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="info-item">
+                        <i class="fas fa-envelope-open-text"></i>
+                        <span class="info-label">Cách thức ứng tuyển:</span><br />
+                        @Model.CachThucUngTuyen
+                    </div>
+
+                    <div class="info-item">
+                        <i class="fas fa-briefcase-clock"></i>
+                        <span class="info-label">Kinh nghiệm yêu cầu:</span>
+                        @Model.KinhNghiem năm
+                    </div>
+
+                    <div class="info-item">
+                        <i class="fas fa-sack-dollar"></i>
+                        <span class="info-label">Mức lương:</span> @Model.MucLuong
+                    </div>
+
+                    <div class="info-item">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span class="info-label">Hạn nộp hồ sơ:</span>
+                        @(Model.HanNop.HasValue ? Model.HanNop.Value.ToString("dd/MM/yyyy") : "Không rõ")
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 text-end">
+                <a href="/CongViec/Apply/@Model.Id" class="btn btn-success apply-btn">
+                    <i class="fas fa-paper-plane"></i> Ứng tuyển ngay
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

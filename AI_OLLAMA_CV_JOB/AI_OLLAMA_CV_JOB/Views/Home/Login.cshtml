@@ -1,0 +1,49 @@
+﻿@{
+    ViewData["Title"] = "Đăng nhập";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <h2 class="fw-bold">Đăng Nhập</h2>
+                </div>
+                <form action="@Url.Action("Login", "Home")" method="post">
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" placeholder="Nhập email của bạn" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="sdt" class="form-label">Số điện thoại</label>
+                        <input type="text" class="form-control" id="sdt" name="sdt" placeholder="Nhập số điện thoại của bạn" required>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">Đăng Nhập</button>
+                    </div>
+                </form>
+
+                <div class="mt-4 text-center">
+                    <p class="text-muted position-relative">
+                        <span class="px-3 bg-white position-relative" style="z-index: 1;">Hoặc đăng nhập với</span>
+                        <span class="position-absolute top-50 start-0 end-0 border-top" style="z-index: 0;"></span>
+                    </p>
+                    <div class="d-flex justify-content-center gap-3 mt-3">
+                        <a href="#" class="btn btn-outline-secondary rounded-circle p-2" style="width: 40px; height: 40px;">
+                            <span>FB</span>
+                        </a>
+                        <a href="#" class="btn btn-outline-secondary rounded-circle p-2" style="width: 40px; height: 40px;">
+                            <span>GG</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // JS tùy chọn cho trang đăng nhập có thể được thêm ở đây
+    </script>
+}

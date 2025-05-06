@@ -1,0 +1,21 @@
+﻿@{
+    ViewData["Title"] = "Upload CV";
+}
+
+<h2>Nộp CV Ứng Tuyển</h2>
+
+<form asp-action="Upload" method="post" enctype="multipart/form-data">
+    <div class="mb-3">
+        <label>Họ tên</label>
+        <input type="text" name="fullName" class="form-control" required />
+    </div>
+    <div class="mb-3">
+        <label>Email</label>
+        <input type="email" name="email" class="form-control" required />
+    </div>
+    <div class="mb-3">
+        <label>Chọn CV (PDF hoặc Word)</label>
+        <input type="file" name="cvFile" class="form-control" required />
+    </div>
+    <button type="submit" class="btn btn-primary">Gửi CV</button>
+</form>
