@@ -12,6 +12,7 @@ builder.Services.AddScoped<CongViecRepository>();
 builder.Services.AddScoped<UngVienRepository>();
 builder.Services.AddSession();
 builder.Services.AddControllersWithViews();
+builder.Services.AddHttpContextAccessor();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

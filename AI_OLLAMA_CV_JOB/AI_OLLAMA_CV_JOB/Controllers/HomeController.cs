@@ -183,6 +183,10 @@ namespace AI_OLLAMA_CV_JOB.Controllers
             return RedirectToAction("Index", "Home");
         }
 
-
+        public IActionResult Logout()
+        {
+            HttpContext.Session.Clear();
+            return RedirectToAction("Index", "Home");
+        }
     }
 }
