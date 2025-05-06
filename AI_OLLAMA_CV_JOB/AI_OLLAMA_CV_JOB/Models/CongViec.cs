@@ -26,4 +26,10 @@ public partial class CongViec
     public string MucLuong { get; set; } = null!;
 
     public DateOnly? HanNop { get; set; }
+
+    public int? HocVan { get; set; }
+
+    public virtual TrinhDoHocVan? HocVanNavigation { get; set; }
+
+    public virtual NhaTuyenDung IdNtdNavigation { get; set; } = null!;
 }

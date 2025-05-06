@@ -16,4 +16,8 @@ public partial class UngVien
     public string? KyNang { get; set; }
 
     public string Sdt { get; set; } = null!;
+
+    public virtual ICollection<CvUngVien> CvUngViens { get; set; } = new List<CvUngVien>();
+
+    public virtual ICollection<ViTriLamViec> ViTriLamViecs { get; set; } = new List<ViTriLamViec>();
 }

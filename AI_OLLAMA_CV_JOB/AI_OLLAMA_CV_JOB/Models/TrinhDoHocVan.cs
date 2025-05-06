@@ -3,17 +3,13 @@ using System.Collections.Generic;
 
 namespace AI_OLLAMA_CV_JOB.Models;
 
-public partial class NhaTuyenDung
+public partial class TrinhDoHocVan
 {
     public int Id { get; set; }
 
-    public string? TenCongty { get; set; }
-
-    public string? Email { get; set; }
-
-    public string? DiaChi { get; set; }
-
-    public string? GioiThieu { get; set; }
+    public string TenTrinhDo { get; set; } = null!;
 
     public virtual ICollection<CongViec> CongViecs { get; set; } = new List<CongViec>();
+
+    public virtual ICollection<ViTriLamViec> ViTriLamViecs { get; set; } = new List<ViTriLamViec>();
 }

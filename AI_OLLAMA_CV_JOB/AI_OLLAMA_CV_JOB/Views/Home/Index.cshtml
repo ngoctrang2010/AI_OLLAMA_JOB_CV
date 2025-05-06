@@ -184,9 +184,11 @@
         <button class="btn btn-sm btn-light rounded-pill px-3 shadow-sm">Tài chính</button>
         <button class="btn btn-sm btn-light rounded-pill px-3 shadow-sm">Thiết kế</button>
     </div>
-    <a class="btn btn-info" href="/Home/PhanTichCV?fileName=2V.pdf">
-        Phân tích CV bằng AI
+    <a class="btn btn-info" href="javascript:void(0);" onclick="fetchDataForAI()">
+        LẤY DỮ LIỆU CHO AI
     </a>
+
+
     <!-- Job Cards -->
     <div class="row g-4">
         @{int delay = 3;}
@@ -244,4 +246,14 @@
             return new bootstrap.Tooltip(tooltipTriggerEl);
         });
     });
+</script>
+<script>
+    async function fetchDataForAI() {
+        const response = await fetch('/Home/ProcessDataForAI', {
+            method: 'POST'
+        });
+
+        const result = await response.json();
+        console.log(result);
+    }
 </script>
