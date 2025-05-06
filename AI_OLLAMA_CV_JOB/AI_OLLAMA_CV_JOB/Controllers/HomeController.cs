@@ -203,8 +203,6 @@ namespace AI_OLLAMA_CV_JOB.Controllers
             return RedirectToAction("Index", "Home");
         }
 
-
-
         /*[HttpGet]
         public async Task<IActionResult> GetDataForAI()
         {
@@ -244,6 +242,7 @@ namespace AI_OLLAMA_CV_JOB.Controllers
                 return response.IsSuccessStatusCode;
             }
         }*/
+         /*
         [HttpPost]
         public async Task<IActionResult> ProcessDataForAI()
         {
@@ -287,7 +286,23 @@ namespace AI_OLLAMA_CV_JOB.Controllers
                     message = "Gửi dữ liệu thất bại",
                     error = errorContent
                 });
+            }*/
+
+        public IActionResult ChatAI()
+        {
+            var ungVienId = HttpContext.Session.GetInt32("UngVienId");
+
+            if (ungVienId == null)
+            {
+                return RedirectToAction("Login", "Home");
             }
+
+            return RedirectToAction("ChatBox", "Home");
+        }
+        public IActionResult ChatBox()
+        {
+            // Sau này bạn có thể hiển thị giao diện chat tại đây
+            return View();
         }
     }
 }
