@@ -35,16 +35,100 @@ namespace AI_OLLAMA_CV_JOB.Controllers
             public List<ViTriLamViec> ViTriLamViecs { get; set; } = new List<ViTriLamViec>();
             public List<CvUngVien> CvUngViens { get; set; } = new List<CvUngVien>();
         }
-        [HttpPost("prepareChroma")]
+        /* public async Task<IActionResult> GetData_prepareChroma()
+         {
+             try
+             {
+                 var CongViecs = (await congViecRepository.GetTatCaCongViec())?.ToList() ?? new List<CongViec>();
+                 var CvUngViens = (await cvUngVienRepository.GetTatCaCV())?.ToList() ?? new List<CvUngVien>();
+                 var ViTriLamViecs = (await viTriLamViecRepository.GetTatCa())?.ToList() ?? new List<ViTriLamViec>();
+
+                 var dataToPY = new DataToPY
+                 {
+                     CongViecs = CongViecs,
+                     CvUngViens = CvUngViens,
+                     ViTriLamViecs = ViTriLamViecs
+                 };
+
+                 using (var client = new HttpClient())
+                 {
+                     var json = JsonConvert.SerializeObject(dataToPY);
+                     var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                     var response = await client.PostAsync("http://localhost:5000/process-data", content);
+                     var result = await response.Content.ReadAsStringAsync();
+
+                     if (!response.IsSuccessStatusCode)
+                         return StatusCode((int)response.StatusCode, result);
+
+                     var responseData = JsonConvert.DeserializeObject<object>(result);
+                     return Ok(responseData);
+                 }
+             }
+             catch (Exception ex)
+             {
+                 return StatusCode(500, new { message = "Internal Server Error", error = ex.Message });
+             }
+         }*/
+      
+        public class ResponseData
+        {
+            [JsonProperty("congviec_embeddings")]
+            public List<EmbeddingItem> CongViecEmbeddings { get; set; }
+
+            [JsonProperty("cvungvien_embeddings")]
+            public List<EmbeddingItem> CvUngVienEmbeddings { get; set; }
+
+            [JsonProperty("vitri_embeddings")]
+            public List<EmbeddingItem> ViTriEmbeddings { get; set; }
+        }
+
         public async Task<IActionResult> GetData_prepareChroma()
         {
             try
             {
+                var CongViecs = (await congViecRepository.GetTatCaCongViec())?.ToList() ?? new List<CongViec>();
+                var CvUngViens = (await cvUngVienRepository.GetTatCaCV())?.ToList() ?? new List<CvUngVien>();
+                var ViTriLamViecs = (await viTriLamViecRepository.GetTatCa())?.ToList() ?? new List<ViTriLamViec>();
+
                 var dataToPY = new
                 {
-                    CongViecs = (await congViecRepository.GetTatCaCongViec())?.ToList() ?? new List<CongViec>(),
-                    CvUngViens = (await cvUngVienRepository.GetTatCaCV())?.ToList() ?? new List<CvUngVien>(),
-                    ViTriLamViecs = (await viTriLamViecRepository.GetTatCa())?.ToList() ?? new List<ViTriLamViec>()
+                    CongViecs = CongViecs.Select(cv => new
+                    {
+                        cv.Id,
+                        cv.IdNtd,
+                        cv.TenCongViec,
+                        cv.MoTaCongViec,
+                        cv.YeuCauCongViec,
+                        cv.PhucLoi,
+                        cv.DiaDiemThoiGian,
+                        cv.CachThucUngTuyen,
+                        cv.KinhNghiem,
+                        cv.MucLuong,
+                        cv.HanNop,
+                        cv.HocVan
+                    }).ToList(),
+                    CvUngViens = CvUngViens.Select(cvu => new
+                    {
+                        cvu.Id,
+                        cvu.ViTriUngTuyen,
+                        cvu.HocVan,
+                        cvu.KinhNghiem,
+                        cvu.DuAn,
+                        cvu.ChungChi,
+                        cvu.IdUngVien
+                    }).ToList(),
+                    ViTriLamViecs = ViTriLamViecs.Select(vtlv => new
+                    {
+                        vtlv.Id,
+                        vtlv.IdUngVien,
+                        vtlv.ViTriTuyenDung,
+                        vtlv.LamViecTai,
+                        vtlv.HinhThucLamViec,
+                        vtlv.TrinhDo,
+                        vtlv.MucLuong,
+                        vtlv.HocVan
+                    }).ToList()
                 };
 
                 using (var client = new HttpClient())
@@ -56,9 +140,17 @@ namespace AI_OLLAMA_CV_JOB.Controllers
                     var result = await response.Content.ReadAsStringAsync();
 
                     if (!response.IsSuccessStatusCode)
+                    {
                         return StatusCode((int)response.StatusCode, result);
+                    }
 
-                    return Ok(JsonConvert.DeserializeObject(result));
+                    var responseData = JsonConvert.DeserializeObject<ResponseData>(result);
+
+                    ViewData["congviec_embeddings"] = responseData.CongViecEmbeddings;
+                    ViewData["cvungvien_embeddings"] = responseData.CvUngVienEmbeddings;
+                    ViewData["vitri_embeddings"] = responseData.ViTriEmbeddings;
+
+                    return View(); // Trả về một View hiển thị dữ liệu nếu cần
                 }
             }
             catch (Exception ex)
@@ -66,6 +158,8 @@ namespace AI_OLLAMA_CV_JOB.Controllers
                 return StatusCode(500, new { message = "Internal Server Error", error = ex.Message });
             }
         }
+
+
         /*public async Task GetData_prepareChroma()
         {
             try
