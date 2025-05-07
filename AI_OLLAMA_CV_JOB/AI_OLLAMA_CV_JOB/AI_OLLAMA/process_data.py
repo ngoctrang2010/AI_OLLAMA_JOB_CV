@@ -3,6 +3,7 @@ from sentence_transformers import SentenceTransformer
 from chromadb import PersistentClient
 import os
 import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
 
 app = Flask(__name__)
 model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
@@ -66,15 +67,13 @@ def process_data():
         "vitri_embeddings": vitri_embeddings
     })
 
-@app.route('/view-data', methods=['GET'])
-def view_data():
+def get_data_Chroma():
     collections = client.list_collections()
     data_summary = {}
 
     for collection in collections:
         try:
             data = collection.get(include=["metadatas", "embeddings"])
-            print("Raw Data:", data)  # In ra dữ liệu để kiểm tra
             data_summary[collection.name] = [
                 {
                     "document": doc.get("document", "No document"),
@@ -85,8 +84,60 @@ def view_data():
         except Exception as e:
             data_summary[collection.name] = f"Error retrieving data: {str(e)}"
 
-    print("Formatted Data:", data_summary)  # In ra dữ liệu đã được format
+    return data_summary
+
+@app.route('/view-data', methods=['GET'])
+def view_data():
+    data_summary = get_data_Chroma()
     return jsonify(data_summary)
+
+@app.route('/qa', methods=['GET'])
+def question_asked():
+    question = request.args.get("question", "Lập trình Mobile")
+    if not question.strip():
+        return jsonify({"error": "Câu hỏi không được để trống."}), 400
+
+    try:
+        question_emb = model.encode(question).tolist()
+    except Exception as e:
+        return jsonify({"error": f"Không thể mã hóa câu hỏi: {str(e)}"}), 500
+
+    results = []
+
+    try:
+        collections = client.list_collections()
+
+        for collection in collections:
+            try:
+                query_result = collection.query(
+                    query_embeddings=[question_emb],
+                    n_results=5,
+                    include=["metadatas", "distances"]
+                )
+
+                documents = query_result.get("metadatas", [[]])[0]
+                distances = query_result.get("distances", [[]])[0]
+
+                collection_results = [
+                    {
+                        "collection": collection.name,
+                        "document": doc.get("document", "No document"),
+                        "similarity": round(1 - dist, 4)
+                    }
+                    for doc, dist in zip(documents, distances)
+                ]
+
+                results.extend(collection_results)
+
+            except Exception as e:
+                print(f"Lỗi khi truy vấn collection {collection.name}: {e}")
+
+    except Exception as e:
+        return jsonify({"error": f"Lỗi khi lấy danh sách collections: {str(e)}"}), 500
+
+    return jsonify({"results": results})
+
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
