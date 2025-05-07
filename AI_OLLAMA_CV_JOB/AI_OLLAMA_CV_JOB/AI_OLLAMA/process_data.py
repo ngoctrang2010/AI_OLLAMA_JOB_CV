@@ -4,6 +4,8 @@ from chromadb import PersistentClient
 import os
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
+import requests
+
 
 app = Flask(__name__)
 model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
@@ -138,6 +140,75 @@ def question_asked():
     return jsonify({"results": results})
 
 
+
+@app.route('/ask-ai', methods=['GET'])
+def ask_ai():
+    question = request.args.get("question", "")
+    if not question.strip():
+        return jsonify({"error": "Missing question"}), 400
+
+    try:
+        question_emb = model.encode(question).tolist()
+    except Exception as e:
+        return jsonify({"error": f"Không thể mã hóa câu hỏi: {str(e)}"}), 500
+
+    results = []
+
+    try:
+        collections = client.list_collections()
+
+        for collection in collections:
+            try:
+                query_result = collection.query(
+                    query_embeddings=[question_emb],
+                    n_results=7,
+                    include=["metadatas", "distances"]
+                )
+
+                documents = query_result.get("metadatas", [[]])[0]
+                distances = query_result.get("distances", [[]])[0]
+
+                collection_results = [
+                    {
+                        "collection": collection.name,
+                        "document": doc.get("document", "No document"),
+                        "similarity": round(1 - dist, 4)
+                    }
+                    for doc, dist in zip(documents, distances)
+                ]
+
+                results.extend(collection_results)
+
+            except Exception as e:
+                print(f"Lỗi khi truy vấn collection {collection.name}: {e}")
+
+    except Exception as e:
+        return jsonify({"error": f"Lỗi khi lấy danh sách collections: {str(e)}"}), 500
+
+    context = "\n".join([f"- {item['document']}" for item in results])
+
+    prompt = f"""
+        Dưới đây là các thông tin công việc được tìm thấy gần giống nhất với câu hỏi. Hãy đọc kỹ và trả lời câu hỏi cuối cùng:
+
+        Thông tin công việc:
+        {context}
+
+        Câu hỏi của tôi: {question}
+
+        Hãy trả lời tôi bằng tiếng Việt nhé bạn, nội dung bạn trả lời phải như 1 văn bản. Các kết quả bạn trả lời hãy chia nhóm.
+        """
+
+    try:
+        ollama_response = requests.post("http://localhost:11434/api/generate", json={
+            "model": "llama3",
+            "prompt": prompt,
+            "stream": False
+        })
+        answer = ollama_response.json().get("response", "Không có phản hồi từ mô hình.")
+    except Exception as e:
+        return jsonify({"error": f"Lỗi khi gọi Ollama API: {str(e)}"}), 500
+
+    return jsonify({"question": question, "answer": answer, "context": results})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
