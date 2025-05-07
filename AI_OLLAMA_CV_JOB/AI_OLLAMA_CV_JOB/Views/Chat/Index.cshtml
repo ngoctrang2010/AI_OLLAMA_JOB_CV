@@ -1,0 +1,28 @@
+﻿@model AI_OLLAMA_CV_JOB.Models.ChatModel
+
+
+@{
+    ViewBag.Title = "AI Job Matching Chat";
+}
+
+<h2>AI Job Matching Chat</h2>
+
+@using (Html.BeginForm("Index", "Chat", FormMethod.Post))
+{
+    <div>
+        <label for="UserQuestion">Nhập câu hỏi hoặc mô tả công việc:</label><br />
+        @Html.TextAreaFor(m => m.UserQuestion, new { rows = 3, cols = 70, style = "margin-top:10px;" })
+    </div>
+    <br />
+    <div>
+        <input type="submit" value="Gửi câu hỏi" class="btn btn-primary" />
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(Model.OllamaResponse))
+{
+    <h3 style="margin-top:20px;">Phản hồi từ Ollama:</h3>
+    <div style="border:1px solid #ccc; padding:15px; border-radius:5px; background:#f9f9f9;">
+        @Html.Raw(Model.OllamaResponse.Replace("\n", "<br />"))
+    </div>
+}

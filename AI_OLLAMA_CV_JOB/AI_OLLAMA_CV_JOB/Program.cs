@@ -20,7 +20,7 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/CongViec/Error");
+    app.UseExceptionHandler("/Chat/Error");
 }
 app.UseStaticFiles();
 
@@ -31,6 +31,6 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=CongViec}/{action=Index}/{id?}");
+    pattern: "{controller=Chat}/{action=Index}/{id?}");
 
 app.Run();
