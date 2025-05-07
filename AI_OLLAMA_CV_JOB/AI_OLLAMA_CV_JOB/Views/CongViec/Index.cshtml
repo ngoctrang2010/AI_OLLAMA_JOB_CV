@@ -13,11 +13,23 @@
     <pre style="color:red;">@ViewBag.Error</pre>
 }
 
-<h2>Dữ liệu đã lưu (saved_data.txt)</h2>
+<h2>Dữ liệu đã lưu (saved_vectors.txt)</h2>
 
 @if (!string.IsNullOrEmpty(ViewBag.SavedData))
 {
-    <pre>@ViewBag.SavedData</pre>
+    var dataSections = ((string)ViewBag.SavedData).Split(new[] { "=== " }, StringSplitOptions.RemoveEmptyEntries);
+    foreach (var dataSection in dataSections)
+    {
+        var lines = ((string)dataSection).Split('\n');
+        <h3>@lines[0]</h3>
+        <pre>
+            @foreach (var line in lines.Skip(1))
+            {
+                @line
+            <br />
+            }
+                </pre>
+    }
 }
 else
 {
