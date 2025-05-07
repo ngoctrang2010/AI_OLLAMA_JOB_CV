@@ -55,7 +55,6 @@ public partial class AiOllamaCvJobContext : DbContext
         {
             entity.ToTable("CV_UngVien");
 
-            entity.Property(e => e.HocVan).HasMaxLength(500);
             entity.Property(e => e.IdUngVien).HasColumnName("Id_UngVien");
             entity.Property(e => e.ViTriUngTuyen).HasMaxLength(200);
 

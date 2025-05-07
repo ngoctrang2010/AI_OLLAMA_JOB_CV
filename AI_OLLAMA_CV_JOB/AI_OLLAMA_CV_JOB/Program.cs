@@ -20,7 +20,7 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Chat/Error");
+    app.UseExceptionHandler("/Home/Error");
 }
 app.UseStaticFiles();
 
@@ -31,6 +31,5 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Chat}/{action=Index}/{id?}");
-
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 app.Run();

@@ -9,13 +9,13 @@ public partial class CvUngVien
 
     public string ViTriUngTuyen { get; set; } = null!;
 
-    public string HocVan { get; set; } = null!;
+    public int HocVan { get; set; }
 
-    public string KinhNghiem { get; set; } = null!;
+    public int KinhNghiem { get; set; }
 
     public string? DuAn { get; set; }
 
-    public string ChungChi { get; set; } = null!;
+    public string? ChungChi { get; set; }
 
     public int IdUngVien { get; set; }
 
