@@ -2,7 +2,7 @@
 {
     public class ChatModel
     {
-        public string UserQuestion { get; set; }
-        public string OllamaResponse { get; set; }
+        public string Question { get; set; }
+        public string Answer { get; set; }
     }
 }

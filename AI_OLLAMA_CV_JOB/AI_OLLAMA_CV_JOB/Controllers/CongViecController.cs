@@ -48,7 +48,6 @@ namespace AI_OLLAMA_CV_JOB.Controllers
             [JsonProperty("cvungvien_embeddings")]
             public List<EmbeddingItem> CvUngVienEmbeddings { get; set; }
         }
-
         public async Task<IActionResult> GetData_prepareChroma()
         {
             try

@@ -1,28 +1,33 @@
 ﻿@model AI_OLLAMA_CV_JOB.Models.ChatModel
 
-
 @{
-    ViewBag.Title = "AI Job Matching Chat";
+    ViewData["Title"] = "Chat với AI";
 }
 
-<h2>AI Job Matching Chat</h2>
+<h2>Chat với AI</h2>
 
-@using (Html.BeginForm("Index", "Chat", FormMethod.Post))
-{
+<form asp-action="Ask" method="post">
     <div>
-        <label for="UserQuestion">Nhập câu hỏi hoặc mô tả công việc:</label><br />
-        @Html.TextAreaFor(m => m.UserQuestion, new { rows = 3, cols = 70, style = "margin-top:10px;" })
+        <label for="question">Câu hỏi:</label><br />
+        <input type="text" id="question" name="Question" value="@Model.Question" style="width: 400px;" />
     </div>
-    <br />
-    <div>
-        <input type="submit" value="Gửi câu hỏi" class="btn btn-primary" />
-    </div>
-}
+    <button type="submit">Gửi câu hỏi</button>
+</form>
 
-@if (!string.IsNullOrEmpty(Model.OllamaResponse))
+<hr />
+
+<form asp-action="Upload" method="post" enctype="multipart/form-data">
+    <div>
+        <label for="file">Hoặc chọn file PDF CV:</label><br />
+        <input type="file" id="file" name="file" accept=".pdf" />
+    </div>
+    <button type="submit">Gửi file PDF</button>
+</form>
+
+@if (!string.IsNullOrEmpty(Model.Answer))
 {
-    <h3 style="margin-top:20px;">Phản hồi từ Ollama:</h3>
-    <div style="border:1px solid #ccc; padding:15px; border-radius:5px; background:#f9f9f9;">
-        @Html.Raw(Model.OllamaResponse.Replace("\n", "<br />"))
+    <div style="margin-top:20px;">
+        <strong>Trả lời từ AI:</strong>
+        <p>@Model.Answer</p>
     </div>
 }

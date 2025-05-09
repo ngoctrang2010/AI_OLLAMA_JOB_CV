@@ -14,8 +14,10 @@ public partial class NhaTuyenDung
     public string? DiaChi { get; set; }
 
     public string? GioiThieu { get; set; }
-
-    public string? UrlnoiQuy { get; set; }
+  
+    public string? DuongDanTep { get; set; }
 
     public virtual ICollection<CongViec> CongViecs { get; set; } = new List<CongViec>();
+
+    public virtual ICollection<NoiQuyCty> NoiQuyCties { get; set; } = new List<NoiQuyCty>();
 }
