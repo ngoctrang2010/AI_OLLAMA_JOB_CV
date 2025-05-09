@@ -15,5 +15,7 @@ public partial class NhaTuyenDung
 
     public string? GioiThieu { get; set; }
 
+    public string? UrlnoiQuy { get; set; }
+
     public virtual ICollection<CongViec> CongViecs { get; set; } = new List<CongViec>();
 }

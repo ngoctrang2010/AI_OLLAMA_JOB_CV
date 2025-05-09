@@ -1,76 +1,540 @@
-﻿@using Microsoft.AspNetCore.Http
-@inject IHttpContextAccessor HttpContextAccessor
-
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - AI_OLLAMA_CV_JOB</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/AI_OLLAMA_CV_JOB.styles.css" asp-append-version="true" />
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>@ViewData["Title"] - AI_OLLAMA_CV_JOB</title>
+	<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+	<link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+	<link rel="stylesheet" href="~/AI_OLLAMA_CV_JOB.styles.css" asp-append-version="true" />
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+	<style>
+		:root {
+			--primary-color: #4361ee;
+			--secondary-color: #3f37c9;
+			--accent-color: #4cc9f0;
+			--light-color: #f8f9fa;
+			--dark-color: #212529;
+			--success-color: #4ade80;
+			--border-radius: 0.5rem;
+			--box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+			--transition: all 0.3s ease;
+		}
+
+		body {
+			font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+			background-color: #f0f2f5;
+			color: var(--dark-color);
+		}
+
+		/* Navbar Styling */
+		.navbar {
+			padding: 0.8rem 1rem;
+			background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+			box-shadow: var(--box-shadow);
+		}
+
+		.navbar-brand {
+			color: white !important;
+			font-weight: 700;
+			font-size: 1.5rem;
+			padding: 0.5rem 1rem;
+			border-radius: var(--border-radius);
+			transition: var(--transition);
+		}
+
+			.navbar-brand:hover {
+				background-color: rgba(255, 255, 255, 0.1);
+			}
+
+		.navbar-nav .nav-link {
+			color: rgba(255, 255, 255, 0.85) !important;
+			font-weight: 500;
+			padding: 0.5rem 1rem;
+			margin: 0 0.2rem;
+			border-radius: var(--border-radius);
+			transition: var(--transition);
+		}
+
+			.navbar-nav .nav-link:hover {
+				color: white !important;
+				background-color: rgba(255, 255, 255, 0.1);
+			}
+
+		.navbar-toggler {
+			border-color: rgba(255, 255, 255, 0.5);
+		}
+
+		.navbar-toggler-icon {
+			background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.75%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+		}
+
+		/* User Auth Buttons */
+		.btn-primary {
+			background-color: var(--accent-color);
+			border-color: var(--accent-color);
+			color: var(--dark-color);
+			font-weight: 600;
+			padding: 0.5rem 1.5rem;
+			border-radius: var(--border-radius);
+			transition: var(--transition);
+		}
+
+			.btn-primary:hover {
+				background-color: #3db8dc;
+				border-color: #3db8dc;
+				transform: translateY(-2px);
+			}
+
+		.btn-outline-secondary {
+			color: white;
+			border-color: rgba(255, 255, 255, 0.5);
+			padding: 0.5rem 1.5rem;
+			border-radius: var(--border-radius);
+			transition: var(--transition);
+		}
+
+			.btn-outline-secondary:hover {
+				background-color: rgba(255, 255, 255, 0.2);
+				border-color: white;
+				color: white;
+			}
+
+		/* Main Content */
+		.main-container {
+			background-color: white;
+			border-radius: var(--border-radius);
+			box-shadow: var(--box-shadow);
+			padding: 2rem;
+			margin-top: 2rem;
+			margin-bottom: 2rem;
+		}
+
+		/* Footer */
+		.footer {
+			background-color: var(--light-color);
+			padding: 1rem 0;
+			border-top: 1px solid rgba(0, 0, 0, 0.1);
+			margin-top: 2rem;
+		}
+
+			.footer a {
+				color: var(--primary-color);
+				text-decoration: none;
+				transition: var(--transition);
+			}
+
+				.footer a:hover {
+					color: var(--secondary-color);
+					text-decoration: underline;
+				}
+
+		.social-links a {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			width: 36px;
+			height: 36px;
+			border-radius: 50%;
+			background-color: rgba(0, 0, 0, 0.05);
+			transition: var(--transition);
+		}
+
+			.social-links a:hover {
+				background-color: var(--primary-color);
+				color: white !important;
+				text-decoration: none;
+				transform: translateY(-3px);
+			}
+
+		/* Chatbox Styles */
+		#chat-toggle-btn {
+			position: fixed;
+			bottom: 2rem;
+			right: 2rem;
+			width: 60px;
+			height: 60px;
+			background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+			color: white;
+			border: none;
+			border-radius: 50%;
+			font-size: 1.5rem;
+			cursor: pointer;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			box-shadow: var(--box-shadow);
+			transition: var(--transition);
+			z-index: 999;
+		}
+
+			#chat-toggle-btn:hover {
+				transform: scale(1.1);
+			}
+
+		#chatbox {
+			position: fixed;
+			bottom: 2rem;
+			right: 2rem;
+			width: 350px;
+			height: 500px;
+			background: white;
+			border-radius: var(--border-radius);
+			box-shadow: var(--box-shadow);
+			display: none;
+			flex-direction: column;
+			overflow: hidden;
+			z-index: 1000;
+			transition: var(--transition);
+		}
+
+		#chatbox-header {
+			background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+			color: white;
+			padding: 1rem;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			font-weight: 600;
+		}
+
+			#chatbox-header .close-chat {
+				cursor: pointer;
+				font-size: 1.2rem;
+			}
+
+		#chatbox-messages {
+			padding: 1rem;
+			flex-grow: 1;
+			overflow-y: auto;
+			display: flex;
+			flex-direction: column;
+			gap: 1rem;
+		}
+
+		.message {
+			max-width: 80%;
+			padding: 0.75rem 1rem;
+			border-radius: 1rem;
+			word-break: break-word;
+		}
+
+		.bot-message {
+			align-self: flex-start;
+			background-color: #f0f2f5;
+			border-bottom-left-radius: 0.25rem;
+		}
+
+		.user-message {
+			align-self: flex-end;
+			background-color: var(--primary-color);
+			color: white;
+			border-bottom-right-radius: 0.25rem;
+		}
+
+		#chatbox-input {
+			display: flex;
+			border-top: 1px solid rgba(0, 0, 0, 0.1);
+			padding: 0.75rem;
+			background-color: #f8f9fa;
+		}
+
+		#chat-input {
+			flex-grow: 1;
+			border: 1px solid #dee2e6;
+			border-radius: var(--border-radius);
+			padding: 0.75rem;
+			margin-right: 0.5rem;
+			transition: var(--transition);
+		}
+
+			#chat-input:focus {
+				outline: none;
+				border-color: var(--primary-color);
+				box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
+			}
+
+		#send-btn {
+			background-color: var(--primary-color);
+			color: white;
+			border: none;
+			border-radius: var(--border-radius);
+			padding: 0.75rem 1.5rem;
+			font-weight: 500;
+			cursor: pointer;
+			transition: var(--transition);
+		}
+
+			#send-btn:hover {
+				background-color: var(--secondary-color);
+			}
+
+		/* Responsive adjustments */
+		@@media (max-width: 768px) {
+			#chatbox {
+				width: 90%;
+				height: 70vh;
+				bottom: 1rem;
+				right: 5%;
+				left: 5%;
+			}
+
+			#chat-toggle-btn {
+				bottom: 1rem;
+				right: 1rem;
+			}
+		}
+	</style>
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">AI_OLLAMA_CV_JOB</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="ChatAI">ChatAI</a>
-                        </li>
-                    </ul>
-                    <ul class="navbar-nav">
-                        @{
-                            var ungVienId = HttpContextAccessor.HttpContext?.Session.GetInt32("UngVienId");
-                            var ungVienHoTen = HttpContextAccessor.HttpContext?.Session.GetString("UngVienHoTen");
-                        }
+	<header>
+		<nav class="navbar navbar-expand-lg navbar-dark">
+			<div class="container-fluid">
+				<a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
+					<i class="fas fa-robot me-2"></i>AI_OLLAMA_CV_JOB
+				</a>
+				<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+						aria-expanded="false" aria-label="Toggle navigation">
+					<span class="navbar-toggler-icon"></span>
+				</button>
+				<div class="navbar-collapse collapse d-lg-inline-flex justify-content-between">
+					<ul class="navbar-nav">
+						<li class="nav-item">
+							<a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">
+								<i class="fas fa-home me-1"></i>Trang chủ
+							</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link" asp-area="" asp-controller="Home" asp-action="ChatAI">
+								<i class="fas fa-comments me-1"></i>ChatAI
+							</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link" asp-area="" asp-controller="Home" asp-action="Privacy">
+								<i class="fas fa-shield-alt me-1"></i>Quyền riêng tư
+							</a>
+						</li>
+					</ul>
+					<ul class="navbar-nav">
+						@{
+							// Fix: Sử dụng Context trực tiếp hoặc HttpContextAccessor đã được inject
+							var ungVienId = Context.Session.GetInt32("UngVienId");
+							var ungVienHoTen = Context.Session.GetString("UngVienHoTen");
+						}
 
-                        @if (ungVienId != null)
-                        {
-                            <li class="nav-item">
-                                <span class="nav-link">Xin chào, @ungVienHoTen!</span>
-                            </li>
-                            <li class="nav-item">
-                                <a class="btn btn-outline-secondary" asp-area="" asp-controller="Home" asp-action="Logout">Đăng xuất</a>
-                            </li>
-                        }
-                        else
-                        {
-                            <li class="nav-item">
-                                <a class="btn btn-primary" asp-area="" asp-controller="Home" asp-action="Login">Đăng nhập</a>
-                            </li>
-                        }
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2025 - AI_OLLAMA_CV_JOB - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
+						@if (ungVienId != null)
+						{
+							<li class="nav-item d-flex align-items-center">
+								<span class="nav-link">
+									<i class="fas fa-user-circle me-1"></i>Xin chào, @ungVienHoTen!
+								</span>
+							</li>
+							<li class="nav-item">
+								<a class="btn btn-outline-secondary" asp-area="" asp-controller="Home" asp-action="Logout">
+									<i class="fas fa-sign-out-alt me-1"></i>Đăng xuất
+								</a>
+							</li>
+						}
+						else
+						{
+							<li class="nav-item">
+								<a class="btn btn-primary" asp-area="" asp-controller="Home" asp-action="Login">
+									<i class="fas fa-sign-in-alt me-1"></i>Đăng nhập
+								</a>
+							</li>
+						}
+					</ul>
+				</div>
+			</div>
+		</nav>
+	</header>
+
+	<div class="container main-container">
+		<main role="main" class="pb-3">
+			@RenderBody()
+		</main>
+	</div>
+
+	<footer class="footer">
+		<div class="container-fluid">
+			<div class="row py-3">
+				<div class="col-md-6 text-md-start text-center">
+					&copy; 2025 - AI_OLLAMA_CV_JOB - <a asp-area="" asp-controller="Home" asp-action="Privacy">Quyền riêng tư</a>
+				</div>
+				<div class="col-md-6 text-md-end text-center mt-3 mt-md-0">
+					<div class="social-links">
+						<a href="#" class="text-muted me-3"><i class="fab fa-facebook"></i></a>
+						<a href="#" class="text-muted me-3"><i class="fab fa-twitter"></i></a>
+						<a href="#" class="text-muted me-3"><i class="fab fa-linkedin"></i></a>
+						<a href="#" class="text-muted"><i class="fab fa-github"></i></a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</footer>
+
+	<!-- Chat Toggle Button -->
+	<button id="chat-toggle-btn">
+		<i class="fas fa-comment-dots"></i>
+	</button>
+
+	<!-- Chatbox -->
+	<div id="chatbox">
+		<div id="chatbox-header">
+			<div><i class="fas fa-robot me-2"></i>JoeOne AI</div>
+			<div class="close-chat"><i class="fas fa-times"></i></div>
+		</div>
+		<div id="chatbox-messages">
+			<div class="message bot-message">Xin chào! Tôi là trợ lý AI. Tôi có thể giúp gì cho bạn hôm nay?</div>
+		</div>
+		<div id="chatbox-input">
+			<input type="text" id="chat-input" placeholder="Nhập tin nhắn của bạn..." />
+			<button id="send-btn">
+				<i class="fas fa-paper-plane"></i>
+			</button>
+		</div>
+	</div>
+
+	<!-- Scripts -->
+	<script src="~/lib/jquery/dist/jquery.min.js"></script>
+	<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+	<script src="~/js/site.js" asp-append-version="true"></script>
+	@await RenderSectionAsync("Scripts", required: false)
+
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+			const chatbox = document.getElementById("chatbox");
+			const toggleBtn = document.getElementById("chat-toggle-btn");
+			const sendBtn = document.getElementById("send-btn");
+			const chatInput = document.getElementById("chat-input");
+			const chatMessages = document.getElementById("chatbox-messages");
+			const closeChat = document.querySelector(".close-chat");
+
+			let history_commnunication = [];
+
+			// 👉 Load chat HTML + JSON history from sessionStorage
+			function loadChatHistory() {
+				const savedHTML = sessionStorage.getItem("chatHistory");
+				const savedJSON = sessionStorage.getItem("chatJSONHistory");
+
+				if (savedHTML) {
+					chatMessages.innerHTML = savedHTML;
+					chatMessages.scrollTop = chatMessages.scrollHeight;
+				}
+				if (savedJSON) {
+					history_commnunication = JSON.parse(savedJSON);
+				}
+			}
+
+			// 👉 Save current HTML + JSON to sessionStorage
+			function saveChatHistory() {
+				sessionStorage.setItem("chatHistory", chatMessages.innerHTML);
+				sessionStorage.setItem("chatJSONHistory", JSON.stringify(history_commnunication));
+			}
+
+			loadChatHistory();
+
+			toggleBtn.addEventListener("click", () => {
+				chatbox.style.display = "flex";
+				toggleBtn.style.display = "none";
+				chatInput.focus();
+			});
+
+			closeChat.addEventListener("click", () => {
+				chatbox.style.display = "none";
+				toggleBtn.style.display = "flex";
+			});
+
+			function sendMessage() {
+				const message = chatInput.value.trim();
+				console.log(history_commnunication);
+				if (message) {
+					// Thêm message người dùng
+					chatMessages.innerHTML += `<div class="message user-message">${message}</div>`;
+					history_commnunication.push({ role: "user", content: message });
+					saveChatHistory();
+
+					chatInput.value = "";
+					chatMessages.scrollTop = chatMessages.scrollHeight;
+
+					// Hiệu ứng typing
+					const typingIndicator = document.createElement('div');
+					typingIndicator.className = 'message bot-message';
+					typingIndicator.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
+					typingIndicator.id = 'typing-indicator';
+					chatMessages.appendChild(typingIndicator);
+					chatMessages.scrollTop = chatMessages.scrollHeight;
+
+					fetch(`http://localhost:5000/ask-ai?question=${encodeURIComponent(message)}`)
+						.then(response => response.json())
+						.then(data => {
+							document.getElementById('typing-indicator')?.remove();
+							let answer = data.answer;
+
+							// Format lại câu trả lời
+							answer = answer.replace(/\n/g, "<br>");
+							answer = answer.replace(/\* (ID \d+: .+?)(?=<br>|$)/g, '<li>$1</li>');
+							if (answer.includes("<li>")) {
+								answer = answer.replace(/(<li>.*<\/li>)/gs, "<ul>$1</ul>");
+							}
+
+							// Hiển thị và lưu
+							chatMessages.innerHTML += `<div class="message bot-message">${answer}</div>`;
+							history_commnunication.push({ role: "assistant", content: data.answer }); // Lưu dạng raw text
+							saveChatHistory();
+							chatMessages.scrollTop = chatMessages.scrollHeight;
+						})
+						.catch(error => {
+							document.getElementById('typing-indicator')?.remove();
+							const errorMsg = "Có lỗi xảy ra khi gửi tin nhắn.";
+							chatMessages.innerHTML += `<div class="message bot-message">${errorMsg}</div>`;
+							history_commnunication.push({ role: "assistant", content: errorMsg });
+							saveChatHistory();
+							console.error('Lỗi gửi đến API:', error);
+						});
+				}
+			}
+
+			sendBtn.addEventListener("click", sendMessage);
+			chatInput.addEventListener("keypress", function (e) {
+				if (e.key === "Enter") {
+					sendMessage();
+				}
+			});
+
+			// CSS cho typing indicator
+			const style = document.createElement('style');
+			style.textContent = `
+					.typing-indicator {
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						padding: 0.5rem;
+					}
+					.typing-indicator span {
+						height: 8px;
+						width: 8px;
+						margin: 0 2px;
+						background-color: #888;
+						display: block;
+						border-radius: 50%;
+						opacity: 0.4;
+						animation: typing 1s infinite;
+					}
+					.typing-indicator span:nth-child(1) { animation-delay: 0s; }
+					.typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+					.typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+					@@keyframes typing {
+						0%   { transform: translateY(0); opacity: 0.4; }
+						50%  { transform: translateY(-5px); opacity: 0.9; }
+						100% { transform: translateY(0); opacity: 0.4; }
+					}
+				`;
+			document.head.appendChild(style);
+		});
+	</script>
+
+
 </body>
 </html>
