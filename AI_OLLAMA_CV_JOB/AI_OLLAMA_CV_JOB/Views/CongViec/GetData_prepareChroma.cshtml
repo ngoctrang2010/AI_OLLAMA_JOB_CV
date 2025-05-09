@@ -1,7 +1,6 @@
 ﻿@{
     var congviec = ViewData["congviec_embeddings"] as List<EmbeddingItem>;
     var uv = ViewData["cvungvien_embeddings"] as List<EmbeddingItem>;
-    var vitri = ViewData["vitri_embeddings"] as List<EmbeddingItem>;
 }
 
 <h3>Công việc Embeddings</h3>
@@ -20,13 +19,5 @@
         <p>
             @string.Join(", ", item.Embedding)
         </p>
-    }
-</ul>
-
-<h3>Vị trí làm việc Embeddings</h3>
-<ul>
-    @foreach (var item in vitri)
-    {
-        <li><strong>@item.Id:</strong> @item.Document (Length: @item.Embedding.Count)</li>
     }
 </ul>

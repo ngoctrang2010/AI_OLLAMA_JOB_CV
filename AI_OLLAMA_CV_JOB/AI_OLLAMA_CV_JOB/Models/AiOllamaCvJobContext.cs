@@ -67,6 +67,10 @@ public partial class AiOllamaCvJobContext : DbContext
         modelBuilder.Entity<NhaTuyenDung>(entity =>
         {
             entity.ToTable("NhaTuyenDung");
+
+            entity.Property(e => e.UrlnoiQuy)
+                .IsUnicode(false)
+                .HasColumnName("URLNoiQuy");
         });
 
         modelBuilder.Entity<TrinhDoHocVan>(entity =>
@@ -94,9 +98,7 @@ public partial class AiOllamaCvJobContext : DbContext
 
             entity.Property(e => e.HinhThucLamViec).HasMaxLength(100);
             entity.Property(e => e.IdUngVien).HasColumnName("Id_UngVien");
-            entity.Property(e => e.LamViecTai)
-                .HasMaxLength(100)
-                .IsFixedLength();
+            entity.Property(e => e.LamViecTai).HasMaxLength(100);
             entity.Property(e => e.MucLuong).HasMaxLength(100);
             entity.Property(e => e.ViTriTuyenDung).HasMaxLength(200);
 
