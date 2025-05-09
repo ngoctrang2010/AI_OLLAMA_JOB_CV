@@ -1,0 +1,420 @@
+﻿@model List<NhaTuyenDung>
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Nhà Tuyển Dụng</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --accent-color: #4895ef;
+            --light-bg: #f8f9fa;
+            --border-radius: 10px;
+            --shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            background-color: #f0f2f5;
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 2rem 0;
+            border-radius: 0 0 var(--border-radius) var(--border-radius);
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            border: none;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            transition: transform 0.3s;
+            overflow: hidden;
+            height: 100%;
+        }
+
+            .card:hover {
+                transform: translateY(-5px);
+            }
+
+        .card-header {
+            background: white;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.5rem;
+        }
+
+        .icon-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--light-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            color: var(--primary-color);
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+            .btn-primary:hover {
+                background-color: var(--secondary-color);
+                border-color: var(--secondary-color);
+            }
+
+        .btn-outline-primary {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+            .btn-outline-primary:hover {
+                background-color: var(--primary-color);
+                color: white;
+            }
+
+        .form-label {
+            font-weight: 500;
+        }
+
+        .table {
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+            .table thead th {
+                border-bottom: 2px solid #dee2e6;
+                color: #495057;
+                font-weight: 600;
+                padding: 12px;
+            }
+
+            .table tbody td {
+                padding: 12px;
+                vertical-align: middle;
+            }
+
+        .table-hover tbody tr:hover {
+            background-color: rgba(67, 97, 238, 0.05);
+        }
+
+        .alert {
+            border-radius: var(--border-radius);
+        }
+
+        .file-upload-container {
+            border: 2px dashed #dee2e6;
+            border-radius: var(--border-radius);
+            padding: 20px;
+            text-align: center;
+            margin: 15px 0;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+            .file-upload-container:hover {
+                border-color: var(--primary-color);
+            }
+
+        .file-name {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+
+        .company-actions {
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .company-badge {
+            background-color: #e7f1ff;
+            border-radius: 30px;
+            padding: 5px 15px;
+            color: var(--primary-color);
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        .file-link {
+            display: flex;
+            align-items: center;
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+            .file-link i {
+                margin-right: 5px;
+            }
+
+        .empty-state {
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        .search-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+            .search-container i {
+                position: absolute;
+                left: 12px;
+                top: 12px;
+                color: #6c757d;
+            }
+
+        .search-input {
+            padding-left: 35px;
+            border-radius: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-header">
+        <div class="container">
+            <h1 class="fw-bold">Quản Lý Nhà Tuyển Dụng</h1>
+            <p class="lead">Quản lý thông tin và tài liệu của các nhà tuyển dụng</p>
+        </div>
+    </div>
+
+    <div class="container mb-5">
+        <div class="row g-4">
+            <!-- Bên trái: Chọn công ty và file -->
+            <div class="col-lg-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <div class="icon-circle">
+                            <i class="fas fa-tasks"></i>
+                        </div>
+                        <span>Thao Tác</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info mb-4">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Chọn công ty và tải lên file để tiếp tục
+                        </div>
+
+                        <!-- Form tải lên file -->
+                        <form method="post" enctype="multipart/form-data" asp-controller="NhaTuyenDung" asp-action="UploadFile">
+                            <!-- Chọn công ty -->
+                            <div class="mb-4">
+                                <label for="company" class="form-label">
+                                    <i class="fas fa-building me-1"></i> Chọn nhà tuyển dụng
+                                </label>
+                                <select id="company" name="companyId" class="form-select form-select-lg shadow-sm">
+                                    <option value="">-- Chọn công ty --</option>
+                                    @foreach (var item in Model)
+                                    {
+                                        <option value="@item.Id">@item.TenCongty</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <!-- Upload file -->
+                            <div class="mb-4">
+                                <label class="form-label d-block">
+                                    <i class="fas fa-file-upload me-1"></i> Tải lên file nội quy
+                                </label>
+
+                                <div class="file-upload-container" id="dropArea">
+                                    <i class="fas fa-cloud-upload-alt fa-2x mb-2" style="color: var(--primary-color)"></i>
+                                    <p class="mb-1">Kéo thả file vào đây hoặc</p>
+                                    <button type="button" class="btn btn-outline-primary btn-sm" id="browseBtn">Chọn File</button>
+                                    <input type="file" name="file" id="fileInput" class="d-none" />
+                                    <div class="file-name mt-2" id="fileName"></div>
+                                </div>
+                            </div>
+
+                            <!-- Nút thao tác -->
+                            <div class="d-grid gap-2 mt-4">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-paper-plane me-1"></i> Gửi File
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bên phải: Danh sách công ty -->
+            <div class="col-lg-8">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <div class="icon-circle">
+                            <i class="fas fa-building"></i>
+                        </div>
+                        <span>Danh Sách Nhà Tuyển Dụng</span>
+                    </div>
+                    <div class="card-body">
+                        <!-- Tìm kiếm -->
+                        <div class="search-container">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="searchCompany" class="form-control search-input" placeholder="Tìm kiếm nhà tuyển dụng...">
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Tên Công Ty</th>
+                                        <th>File Nội Quy</th>
+                                        <th>Liên Hệ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model.Count() == 0)
+                                    {
+                                        <tr>
+                                            <td colspan="3" class="text-center py-4">
+                                                <div class="empty-state">
+                                                    <i class="fas fa-exclamation-circle fa-2x mb-3" style="color: #6c757d;"></i>
+                                                    <p>Chưa có nhà tuyển dụng nào trong hệ thống</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var company in Model)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="icon-circle me-2" style="width: 35px; height: 35px;">
+                                                            <i class="fas fa-building"></i>
+                                                        </div>
+                                                        <span class="fw-medium">@company.TenCongty</span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    @if (!string.IsNullOrEmpty(company.DuongDanTep))
+                                                    {
+                                                        <a href="@company.DuongDanTep" class="file-link" target="_blank">
+                                                            <i class="fas fa-file-pdf"></i> Xem File
+                                                        </a>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="empty-state">
+                                                            <i class="fas fa-times-circle me-1"></i> Chưa có file
+                                                        </span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    <a href="/Chat?companyId=@company.Id" class="btn btn-sm btn-outline-primary rounded-pill">
+                                                        <i class="fas fa-comment me-1"></i> Nhắn tin
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Xử lý chọn file
+            const fileInput = document.getElementById('fileInput');
+            const browseBtn = document.getElementById('browseBtn');
+            const dropArea = document.getElementById('dropArea');
+            const fileName = document.getElementById('fileName');
+
+            browseBtn.addEventListener('click', function() {
+                fileInput.click();
+            });
+
+            fileInput.addEventListener('change', function() {
+                if (fileInput.files.length > 0) {
+                    fileName.textContent = fileInput.files[0].name;
+                    dropArea.style.borderColor = 'var(--primary-color)';
+                }
+            });
+
+            // Xử lý kéo thả
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, unhighlight, false);
+            });
+
+            function highlight() {
+                dropArea.style.borderColor = 'var(--primary-color)';
+                dropArea.style.backgroundColor = 'rgba(67, 97, 238, 0.05)';
+            }
+
+            function unhighlight() {
+                dropArea.style.borderColor = '#dee2e6';
+                dropArea.style.backgroundColor = 'transparent';
+            }
+
+            dropArea.addEventListener('drop', handleDrop, false);
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+
+                if (files.length > 0) {
+                    fileInput.files = files;
+                    fileName.textContent = files[0].name;
+                }
+            }
+
+            // Tìm kiếm công ty
+            const searchInput = document.getElementById('searchCompany');
+            const tableRows = document.querySelectorAll('tbody tr');
+
+            searchInput.addEventListener('keyup', function() {
+                const searchValue = this.value.toLowerCase();
+
+                tableRows.forEach(row => {
+                    const companyName = row.querySelector('td:first-child').textContent.toLowerCase();
+
+                    if (companyName.includes(searchValue)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

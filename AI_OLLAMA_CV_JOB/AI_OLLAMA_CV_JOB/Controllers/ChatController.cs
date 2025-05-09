@@ -1,67 +1,146 @@
-﻿using AI_OLLAMA_CV_JOB.Models;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System.Diagnostics;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using System;
+using System.Net.Http;
+using System.Text;
+using System.Threading.Tasks;
+using AI_OLLAMA_CV_JOB.Models;
 
-namespace AI_OLLAMA_CV_JOB.Controllers
+public class ChatController : Controller
 {
-    public class ChatController : Controller
+    private readonly ILogger<ChatController> _logger;
+    private readonly IHttpClientFactory _httpClientFactory;
+
+    public ChatController(ILogger<ChatController> logger, IHttpClientFactory httpClientFactory)
     {
-        private readonly IWebHostEnvironment _env;
+        _logger = logger;
+        _httpClientFactory = httpClientFactory;
+    }
 
-        public ChatController(IWebHostEnvironment env)
+    public ActionResult Index()
+    {
+        return View(new ChatModel());
+    }
+
+    [HttpPost]
+    public async Task<ActionResult> Ask(ChatModel model)
+    {
+        if (string.IsNullOrEmpty(model.Question))
         {
-            _env = env;
+            ModelState.AddModelError("", "Vui lòng nhập câu hỏi.");
+            return View("Index", model);
         }
 
-        // GET: Chat
-        public IActionResult Index()
+        var answer = await CallFastApiForText(model.Question);
+        model.Answer = answer;
+
+        return View("Index", model);
+    }
+
+    [HttpPost]
+    public async Task<ActionResult> Upload(IFormFile file)
+    {
+        if (file == null || file.Length == 0)
         {
-            var model = new ChatModel();
-            return View(model);
+            ModelState.AddModelError("", "Vui lòng chọn file PDF.");
+            return View("Index", new ChatModel());
         }
 
-        [HttpPost]
-        public IActionResult Index(ChatModel model)
+        var answer = await CallFastApiForFile(file);
+        var model = new ChatModel
         {
-            if (!string.IsNullOrEmpty(model.UserQuestion))
+            Answer = answer
+        };
+
+        return View("Index", model);
+    }
+
+    private async Task<string> CallFastApiForText(string prompt)
+    {
+        var client = _httpClientFactory.CreateClient();
+        client.Timeout = TimeSpan.FromMinutes(4);
+
+        var url = "http://localhost:8000/ask_question/";
+        var payload = new
+        {
+            question_text = prompt,
+            model_name = "tinyllama",
+            top_k = 5
+        };
+
+        var content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
+
+        try
+        {
+            var response = await client.PostAsync(url, content);
+            var responseData = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
             {
-                string answer = RunPythonOllama(model.UserQuestion);
-                model.OllamaResponse = answer;
+                _logger.LogError("FastAPI trả về lỗi {StatusCode}: {Content}", response.StatusCode, responseData);
+                return $"Lỗi từ FastAPI: {response.StatusCode} - {responseData}";
             }
-            return View(model);
-        }
 
-        private string RunPythonOllama(string userQuery)
+            var data = JsonConvert.DeserializeObject<FastApiResponse>(responseData);
+            return data?.answer ?? "Không nhận được trả lời từ FastAPI.";
+        }
+        catch (Exception ex)
         {
-            // Lấy path tuyệt đối của Python script
-            string scriptPath = Path.Combine(_env.ContentRootPath, "Scripts", "ollama_integration.py");
-
-            string pythonExePath = @"C:\Users\ADMIN\AppData\Local\Programs\Python\Python312\python.exe"; // Cập nhật đường dẫn Python đúng máy bạn
-
-            var psi = new ProcessStartInfo
-            {
-                FileName = pythonExePath,
-                Arguments = $"\"{scriptPath}\" \"{userQuery}\"",
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                CreateNoWindow = true
-            };
-
-            using (var process = Process.Start(psi))
-            {
-                string output = process.StandardOutput.ReadToEnd();
-                string errors = process.StandardError.ReadToEnd();
-
-                process.WaitForExit();
-
-                if (!string.IsNullOrEmpty(errors))
-                {
-                    return $"Đã xảy ra lỗi: {errors}";
-                }
-
-                return output;
-            }
+            _logger.LogError(ex, "Lỗi khi gọi FastAPI.");
+            return $"Có lỗi xảy ra khi gọi API: {ex.Message}";
         }
+    }
+
+    private async Task<string> CallFastApiForFile(IFormFile file)
+    {
+        var client = _httpClientFactory.CreateClient();
+        client.Timeout = TimeSpan.FromMinutes(4);
+
+        var url = "http://localhost:8000/extract_text/";
+
+        using var content = new MultipartFormDataContent();
+        using var stream = file.OpenReadStream();
+        using var fileContent = new StreamContent(stream);
+
+        fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+        content.Add(fileContent, "file", file.FileName);
+
+        try
+        {
+            var response = await client.PostAsync(url, content);
+            var responseData = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogError("FastAPI trả về lỗi {StatusCode}: {Content}", response.StatusCode, responseData);
+                return $"Lỗi từ FastAPI ({response.StatusCode}): {responseData}";
+            }
+
+            var data = JsonConvert.DeserializeObject<FastApiResponse>(responseData);
+            return data?.answer ?? "Không nhận được trả lời từ FastAPI.";
+        }
+        catch (TaskCanceledException ex)
+        {
+            _logger.LogError(ex, "API FastAPI mất quá nhiều thời gian để phản hồi.");
+            return "FastAPI phản hồi quá lâu, vui lòng thử lại sau.";
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "Lỗi mạng khi gọi FastAPI.");
+            return "Không thể kết nối đến FastAPI, kiểm tra lại máy chủ.";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi không xác định khi gọi FastAPI.");
+            return $"Có lỗi xảy ra khi gọi API: {ex.Message}";
+        }
+    }
+
+
+    public class FastApiResponse
+    {
+        public string answer { get; set; }
     }
 }
