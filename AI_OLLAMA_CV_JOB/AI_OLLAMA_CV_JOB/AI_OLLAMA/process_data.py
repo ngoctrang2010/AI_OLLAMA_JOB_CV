@@ -181,6 +181,9 @@ def question_asked():
 @app.route('/ask-ai', methods=['GET'])
 def ask_ai():
     question = request.args.get("question", "")
+    role = request.args.get("role", "")
+    history_commu = request.args.get("history_communication", "")
+    print(history_commu)
     if not question.strip():
         return jsonify({"error": "Missing question"}), 400
 
@@ -226,75 +229,79 @@ def ask_ai():
         for future in futures:
             results.extend(future.result())
 
-    # Lấy top 10 kết quả theo độ tương đồng
-    top_results = sorted(results, key=lambda x: x["similarity"], reverse=True)[:10]
-
     # Gom nhóm kết quả theo collection
     grouped = {
         "CongViec_Collection": [],
-        "CvUngVien_Collection": [],
-        "ViTriUngTuyen_Collection": []
+        "CvUngVien_Collection": []
     }
-    for item in top_results:
+    for item in results:
         if item["collection"] in grouped:
             grouped[item["collection"]].append(item["document"])
 
     # Format context rõ ràng
     context_parts = {
         "CongViec_Collection": "\n".join(f"- {doc}" for doc in grouped["CongViec_Collection"]) or "- Không có dữ liệu phù hợp",
-        "CvUngVien_Collection": "\n".join(f"- {doc}" for doc in grouped["CvUngVien_Collection"]) or "- Không có dữ liệu phù hợp",
-        "ViTriUngTuyen_Collection": "\n".join(f"- {doc}" for doc in grouped["ViTriUngTuyen_Collection"]) or "- Không có dữ liệu phù hợp"
+        "CvUngVien_Collection": "\n".join(f"- {doc}" for doc in grouped["CvUngVien_Collection"]) or "- Không có dữ liệu phù hợp"
     }
     # Prompt tối ưu, hướng dẫn LLM trả lời chính xác
-
+    
     prompt = f"""
-        📌 Bạn là một trợ lý ảo thân thiện của trang web tuyển dụng **JobOne**, tên là **JobOneAgent**, chuyên hỗ trợ người dùng trong hệ thống tuyển dụng trực tuyến.
+        📌 Bạn là một trợ lý ảo thân thiện của trang website tuyển dụng JobOne, tên là JobOneAgent, chuyên hỗ trợ người dùng trong hệ thống tuyển dụng trực tuyến.
 
-        🎯 **Nguyên tắc trả lời:**
+        🎯 **QUY TẮC BẮT BUỘC – PHẢI TUÂN THỦ 100%:**
 
-            1. **Chào hỏi, hỏi thăm:**
-               - Trả lời thân thiện, tự nhiên, mang tính cá nhân.
+             1. **TUYỆT ĐỐI CHỈ TRẢ LỜI DỰA TRÊN DỮ LIỆU CỦA HỆ THỐNG ĐỂ TRẢ LỜI. KHÔNG ĐƯỢC SUY DIỄN, BỔ SUNG, HAY BỊA DỮ LIỆU.**
+                - Nếu dữ liệu không đủ hoặc không tìm thấy phù hợp, hãy trả lời: **"Hiện tại, tôi chưa có thông tin phù hợp trong hệ thống."**
+                - Không được sử dụng kiến thức từ các nguồn khác hoặc dữ liệu huấn luyện.
+                - Không hiển thị các giá trị rỗng hoặc `"None"` và không hiển thị các trường kỹ thuật như `ID`, `internal code`, v.v.
 
-            2. **Câu hỏi về tuyển dụng (công việc, CV, vị trí, công ty):**
-               - Không dịch **tên công việc, vị trí, công ty**.
-               - Nếu người dùng là **nhà tuyển dụng**: tìm **ứng viên phù hợp** với yêu cầu công việc.
-               - Nếu người dùng là **ứng viên**: tìm **việc làm phù hợp** với CV hoặc nguyện vọng.
-               - Có thể **đề xuất thêm tối đa 5 công việc phù hợp**.
+             2. **Ưu tiên lọc dữ liệu theo thứ tự sau (nếu có thể):**
+                - (1) Địa điểm làm việc
+                - (2) Tên công việc / vị trí ứng tuyển
+                - (3) Kinh nghiệm, học vấn
+                - (4) Mức lương và thông tin khác
 
-            3. **Câu hỏi về công ty:**
-               - Trả lời dựa trên thông tin công ty có trong hệ thống (nếu có).
+             3. **Cách trình bày danh sách:**
+                - Nếu là **danh sách công việc**, mỗi dòng dùng mẫu:
+                  👉 `Tên công việc – Nơi làm việc – Mô tả – Mức lương – Cách thức ứng tuyển`
+                - Nếu là **danh sách CV ứng viên**, mỗi dòng dùng mẫu:
+                  👉 `Tên ứng viên – Vị trí ứng tuyển – Học vấn – Kinh nghiệm – Link CV`
+                - Tối đa 5 dòng, sau đó nói:  
+                  👉 **"Còn nhiều kết quả khác trong hệ thống..."**
 
-            4. **Câu hỏi khác hoặc không rõ ràng:**
-               - Trả lời lịch sự và hướng dẫn người dùng sử dụng hệ thống để tìm thông tin chính xác.
+             4**Cách phản hồi:**
+                - Trả lời bằng **tiếng VIỆT**.
+                - Ngôn ngữ thân thiện, lịch sự, ngắn gọn, đúng trọng tâm, NGHIÊM TÚC, KHÔNG ĐÙA GIỠN, TUÂN THỦ TOÀN BỘ CÁC QUY TẮC.
+                - Không dịch từ tiếng Anh sang tiếng Việt và ngược lại: **tên công việc, công ty, vị trí ứng tuyển**.
+                - Không lặp lại ý nghĩa trong câu trả lời, không tự nếu các nguyên tắc phản hồi trong phần trả lời.
+                - Nếu là ứng viên thì chỉ trả lời liên quan đến công việc đang tuyển dụng, thông tin công ty đang tuyển dụng.
+                - Nếu là nhà tuyển dụng thì chỉ trả lời liên quan đến CV của ứng viên.
 
-            5. **Lưu ý quan trọng:**
-               - **KHÔNG SUY ĐOÁN, BIẾN TẤU HAY TỰ THAY ĐỔI DỮ LIỆU CỦA HỆ THỐNG.**
-               - **KHÔNG HIỂN THỊ THÔNG TIN NHẠY CẢM NHƯ ID.**
-               - Khi liệt kê, trình bày dưới dạng danh sách rõ ràng.
-               - Khi hiển thị danh sách công việc, dùng mẫu: `Tên công việc – Làm việc tại – Mô tả – Mức lương – Cách thức ứng tuyển`
-               - Khi hiển thị danh sách CV ứng viên, dùng mẫu: `Tên ứng viên – Vị trí ứng tuyển – Học vấn – Kinh nghiệm – Link CV`
-               - Ưu tiên dữ liệu theo thứ tự:
-                    Độ ưu tiên 1: Tìm việc tại, địa điểm làm việc
-                    Độ ưu tiên 2: Tên công việc, vị trí ứng tuyển
-                    Độ ưu tiên 3: Kinh nghiệm, học vấn
-                    Độ ưu tiên 4: Mức lương và thông tin khác
-               
-               - Không đề cập đến các trang tuyển dụng khác.
+         --- 
 
-        📊 **Dữ liệu hệ thống:**
+        🧾 **DỮ LIỆU HỆ THỐNG**
 
-            1. 🧾 **Công việc đang tuyển (dùng để gợi ý):**
-               {context_parts["CongViec_Collection"]}
+             ### 🧠 DỮ LIỆU CÔNG VIỆC (dùng để gợi ý tìm kiếm công việc cho ứng viên) -  dùng dữ liệu này cho ứng viên:
+             <<<START_CONGVIEC>>>
+             {context_parts["CongViec_Collection"]}
+             <<<END_CONGVIEC>>>
 
-            2. 📄 **CV ứng viên (dùng để tìm ứng viên phù hợp):**
-               {context_parts["CvUngVien_Collection"]}
+             ### 👤 DỮ LIỆU CV ỨNG VIÊN (dùng để tìm ứng viên phù hợp theo yêu cầu của nhà tuyển dụng) - dùng dữ liệu này cho nhà tuyển dụng:
+             <<<START_CVUNGVIEN>>>
+             {context_parts["CvUngVien_Collection"]}
+             <<<END_CVUNGVIEN>>>
 
-         ---
+         --- 
 
-        ❓ **Câu hỏi của người dùng:** {question}
+        🧾 **Lịch sử trò chuyện**: {history_commu}
+            
+         --- 
 
-        📌 **Yêu cầu phản hồi bằng tiếng Việt. Tên công ty hoặc công việc giữ nguyên (không dịch). Trả lời ngắn gọn, rõ ràng và đúng mục tiêu.**
+         **LƯU Ý QUAN TRỌNG:** Nếu không có dữ liệu nào phù hợp, hoặc nếu thông tin không đủ để trả lời, bạn phải nói rõ: **"Hiện tại, tôi chưa có thông tin phù hợp trong hệ thống."**
+
+         ❓ **Câu hỏi người dùng:** Tôi là {role}. {question}.
     """.strip()
+
 
     # Gọi mô hình Ollama
     try:

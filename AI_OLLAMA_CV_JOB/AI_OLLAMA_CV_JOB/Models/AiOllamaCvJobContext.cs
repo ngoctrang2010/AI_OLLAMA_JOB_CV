@@ -21,6 +21,8 @@ public partial class AiOllamaCvJobContext : DbContext
 
     public virtual DbSet<NhaTuyenDung> NhaTuyenDungs { get; set; }
 
+    public virtual DbSet<NoiQuyCty> NoiQuyCties { get; set; }
+
     public virtual DbSet<TrinhDoHocVan> TrinhDoHocVans { get; set; }
 
     public virtual DbSet<UngVien> UngViens { get; set; }
@@ -68,9 +70,19 @@ public partial class AiOllamaCvJobContext : DbContext
         {
             entity.ToTable("NhaTuyenDung");
 
-            entity.Property(e => e.UrlnoiQuy)
-                .IsUnicode(false)
-                .HasColumnName("URLNoiQuy");
+            entity.Property(e => e.DuongDanTep)
+                .HasMaxLength(200)
+                .IsUnicode(false);
+        });
+
+        modelBuilder.Entity<NoiQuyCty>(entity =>
+        {
+            entity.ToTable("NoiQuyCty");
+
+            entity.HasOne(d => d.IdCtyNavigation).WithMany(p => p.NoiQuyCties)
+                .HasForeignKey(d => d.IdCty)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_NoiQuyCty_NhaTuyenDung");
         });
 
         modelBuilder.Entity<TrinhDoHocVan>(entity =>

@@ -33,7 +33,6 @@
             public string? TenCty { get; set; }
             public string? TrinhDoHocVan { get; set; }
             public string? YeuCauKinhNghiem { get; set; }
-            public string? URLNoiQuy { get; set; }
 
         }
     }

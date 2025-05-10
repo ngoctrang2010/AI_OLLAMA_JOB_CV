@@ -388,7 +388,7 @@
 			<div class="close-chat"><i class="fas fa-times"></i></div>
 		</div>
 		<div id="chatbox-messages">
-			<div class="message bot-message">Xin chào! Tôi là trợ lý AI. Tôi có thể giúp gì cho bạn hôm nay?</div>
+			<div class="message bot-message">Xin chào! Tôi là trợ lý AI.</div>
 		</div>
 		<div id="chatbox-input">
 			<input type="text" id="chat-input" placeholder="Nhập tin nhắn của bạn..." />
@@ -450,11 +450,12 @@
 
 			function sendMessage() {
 				const message = chatInput.value.trim();
+				const role = "ỨNG VIÊN";
 				console.log(history_commnunication);
 				if (message) {
 					// Thêm message người dùng
 					chatMessages.innerHTML += `<div class="message user-message">${message}</div>`;
-					history_commnunication.push({ role: "user", content: message });
+					history_commnunication.push({ role: "Người dùng", content: message });
 					saveChatHistory();
 
 					chatInput.value = "";
@@ -468,10 +469,17 @@
 					chatMessages.appendChild(typingIndicator);
 					chatMessages.scrollTop = chatMessages.scrollHeight;
 
-					fetch(`http://localhost:5000/ask-ai?question=${encodeURIComponent(message)}`)
-						.then(response => response.json())
-						.then(data => {
-							document.getElementById('typing-indicator')?.remove();
+					let conversationHistory = history_commnunication.slice(-10);
+					$.ajax({
+						url: `http://localhost:5000/ask-ai`,
+						method: "GET",
+						data: {
+							question: message,
+							role: role,
+							history_communication: conversationHistory
+						},
+						success: function (data) {
+							$('#typing-indicator').remove();
 							let answer = data.answer;
 
 							// Format lại câu trả lời
@@ -483,18 +491,19 @@
 
 							// Hiển thị và lưu
 							chatMessages.innerHTML += `<div class="message bot-message">${answer}</div>`;
-							history_commnunication.push({ role: "assistant", content: data.answer }); // Lưu dạng raw text
+							history_commnunication.push({ role: "JobOneAgent", content: data.answer });
 							saveChatHistory();
 							chatMessages.scrollTop = chatMessages.scrollHeight;
-						})
-						.catch(error => {
-							document.getElementById('typing-indicator')?.remove();
-							const errorMsg = "Có lỗi xảy ra khi gửi tin nhắn.";
+						},
+						error: function (xhr, status, error) {
+							$('#typing-indicator').remove();
+							const errorMsg = "Mình xin lỗi, hiện tại đã có sự cố, mình sẽ quay trở lại sớm nhất.";
 							chatMessages.innerHTML += `<div class="message bot-message">${errorMsg}</div>`;
-							history_commnunication.push({ role: "assistant", content: errorMsg });
+							history_commnunication.push({ role: "JobOneAgent", content: errorMsg });
 							saveChatHistory();
 							console.error('Lỗi gửi đến API:', error);
-						});
+						}
+					});
 				}
 			}
 
