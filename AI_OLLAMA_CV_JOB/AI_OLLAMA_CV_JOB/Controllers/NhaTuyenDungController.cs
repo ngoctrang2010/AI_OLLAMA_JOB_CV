@@ -12,6 +12,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Office.Interop.Word;
 using System.Text;
 using Newtonsoft.Json;
+using System.ComponentModel;
+using System.Text.RegularExpressions;
+using OfficeOpenXml;
 namespace AI_OLLAMA_CV_JOB.Controllers
 {
     public class NhaTuyenDungController : Controller
@@ -88,7 +91,7 @@ namespace AI_OLLAMA_CV_JOB.Controllers
                     file.CopyTo(stream);
                 }
 
-                // **Xử lý đọc nội dung file**
+                // *Xử lý đọc nội dung file*
                 string fileContent = "";
                 if (fileExtension == ".pdf")
                 {
@@ -96,11 +99,15 @@ namespace AI_OLLAMA_CV_JOB.Controllers
                 }
                 else if (fileExtension == ".docx")
                 {
-                    fileContent = ReadWordContent(file.OpenReadStream());
+                    fileContent = ReadWordContentWithoutPageNumbers(file.OpenReadStream());
                 }
                 else if (fileExtension == ".doc")
                 {
-                    fileContent = ReadDocContent(filePath);
+                    fileContent = ReadDocContentWithoutPageNumbers(filePath);
+                }
+                else if (fileExtension == ".xlsx")
+                {
+                    fileContent = ReadExcelContent(file.OpenReadStream());
                 }
                 else
                 {
@@ -110,14 +117,15 @@ namespace AI_OLLAMA_CV_JOB.Controllers
                     }
                 }
 
+
                 // Gọi API gửi vector (và chờ kết quả)
                 await SendToVectorDB(companyId.ToString(), nhaTuyenDung.TenCongty, fileContent);
 
-                // **Lưu đường dẫn file vào bảng `NhaTuyenDung`**
+                // **Lưu đường dẫn file vào bảng NhaTuyenDung**
                 nhaTuyenDung.DuongDanTep = urlPath;
                 _context.SaveChanges();
 
-                // **Kiểm tra nếu nội quy đã tồn tại, thì cập nhật nội dung**
+                // *Kiểm tra nếu nội quy đã tồn tại, thì cập nhật nội dung*
                 var noiQuyCty = _context.NoiQuyCties.FirstOrDefault(nqc => nqc.IdCty == companyId);
                 if (noiQuyCty != null)
                 {
@@ -143,18 +151,84 @@ namespace AI_OLLAMA_CV_JOB.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        public string ReadExcelContent(Stream excelStream)
+        {
+            // Đặt LicenseContext cho EPPlus
+            ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
+
+
+            StringBuilder sb = new StringBuilder();
+
+            // Mở gói Excel
+            using (var package = new ExcelPackage(excelStream))
+            {
+                foreach (var worksheet in package.Workbook.Worksheets)
+                {
+                    sb.AppendLine($"--- Sheet: {worksheet.Name} ---");
+
+                    var rowCount = worksheet.Dimension.Rows;
+                    var colCount = worksheet.Dimension.Columns;
+
+                    for (int row = 1; row <= rowCount; row++)
+                    {
+                        List<string> cells = new List<string>();
+                        for (int col = 1; col <= colCount; col++)
+                        {
+                            var cellValue = worksheet.Cells[row, col].Text;
+                            if (!string.IsNullOrWhiteSpace(cellValue))
+                                cells.Add(cellValue.Trim());
+                        }
+                        if (cells.Count > 0)
+                            sb.AppendLine(string.Join(" | ", cells));
+                    }
+                }
+            }
+
+            return sb.ToString();
+        }
+
         // Đọc nội dung file PDF
+
         public string ReadPdfContent(Stream pdfStream)
         {
-            using (var reader = new PdfReader(pdfStream))
+            StringBuilder text = new StringBuilder();
+            using (PdfReader reader = new PdfReader(pdfStream))
             {
-                StringBuilder text = new StringBuilder();
                 for (int i = 1; i <= reader.NumberOfPages; i++)
                 {
-                    text.Append(PdfTextExtractor.GetTextFromPage(reader, i));
+                    string pageText = PdfTextExtractor.GetTextFromPage(reader, i);
+                    string filtered = FilterText(pageText);
+                    text.AppendLine(filtered);
                 }
-                return text.ToString();
             }
+            return text.ToString();
+        }
+
+        private string FilterText(string input)
+        {
+            var lines = input.Split('\n');
+            StringBuilder filtered = new StringBuilder();
+            foreach (var line in lines)
+            {
+                string trimmed = line.Trim();
+
+                // Ví dụ loại các dòng:
+                // - chỉ số trang: "Page 1", "Page 2 of 10"
+                // - copyright: "© CompanyName 2024"
+                // - ngày tháng: "Date: 2024-05-10"
+                if (string.IsNullOrWhiteSpace(trimmed) ||
+                    System.Text.RegularExpressions.Regex.IsMatch(trimmed, @"^Page\s+\d+(\s+of\s+\d+)?$", RegexOptions.IgnoreCase) ||
+                    System.Text.RegularExpressions.Regex.IsMatch(trimmed, @"^\d+$") ||
+                    trimmed.Contains("CompanyName") ||
+                    System.Text.RegularExpressions.Regex.IsMatch(trimmed, @"^Date\s*:\s*\d{4}-\d{2}-\d{2}$", RegexOptions.IgnoreCase)
+                    )
+                {
+                    continue;
+                }
+
+                filtered.AppendLine(trimmed);
+            }
+            return filtered.ToString();
         }
 
         // Đọc nội dung file Word (.docx)
@@ -166,35 +240,117 @@ namespace AI_OLLAMA_CV_JOB.Controllers
                 return body.InnerText;
             }
         }
-        public string ReadDocContent(string filePath)
+        public string ReadWordContentWithoutPageNumbers(Stream wordStream)
+        {
+            using (WordprocessingDocument wordDoc = WordprocessingDocument.Open(wordStream, false))
+            {
+                var body = wordDoc.MainDocumentPart.Document.Body;
+
+                // Loại bỏ số trang trong các phần tử của tài liệu
+                var pageNumbers = body.Descendants<DocumentFormat.OpenXml.Drawing.Text>().Where(x => x.Text.Contains("Page"));
+
+                foreach (var pageNumber in pageNumbers.ToList())
+                {
+                    pageNumber.Remove(); // Xóa các phần tử số trang
+                }
+
+                return body.InnerText;
+            }
+        }
+
+        public string ReadDocContentWithoutPageNumbers(string filePath)
         {
             Application wordApp = new Application();
             Document doc = wordApp.Documents.Open(filePath);
 
+            // Loại bỏ số trang
+            foreach (Section section in doc.Sections)
+            {
+                foreach (HeaderFooter headerFooter in section.Headers)
+                {
+                    if (headerFooter.Exists)
+                    {
+                        foreach (Paragraph paragraph in headerFooter.Range.Paragraphs)
+                        {
+                            Microsoft.Office.Interop.Word.Range paraRange = paragraph.Range;
+                            if (paraRange.Text.Contains("Page"))
+                            {
+                                paraRange.Delete(); // Xóa đoạn chứa chữ "Page"
+                            }
+                        }
+                    }
+                }
+
+
+
+                foreach (HeaderFooter headerFooter in section.Footers)
+                {
+                    if (headerFooter.Exists)
+                    {
+                        foreach (Paragraph paragraph in headerFooter.Range.Paragraphs)
+                        {
+                            Microsoft.Office.Interop.Word.Range paraRange = paragraph.Range;
+                            if (paraRange.Text.Contains("Page"))
+                            {
+                                paraRange.Delete();
+                            }
+                        }
+                    }
+                }
+
+            }
+
             string text = doc.Content.Text;
 
-            // Đóng tài liệu sau khi đọc
+            // Đóng tài liệu sau khi xử lý
             doc.Close(false);
             wordApp.Quit();
 
             return text;
         }
+
+
         public async Task<bool> SendToVectorDB(string docId, string companyName, string content)
         {
-            var httpClient = new HttpClient();
-            var url = "http://127.0.0.1:8000/vectorize/";
-
-            var payload = new
+            try
             {
-                doc_id = docId,
-                company_name = companyName,  // Gửi tên công ty
-                content = content
-            };
+                var httpClient = new HttpClient();
+                var url = "http://127.0.0.1:5000/vectorize/";
 
-            var jsonContent = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
+                var payload = new
+                {
+                    doc_id = docId,
+                    company_name = companyName,  // Gửi tên công ty
+                    content = content
+                };
 
-            var response = await httpClient.PostAsync(url, jsonContent);
-            return response.IsSuccessStatusCode;
+                var jsonContent = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
+
+                var response = await httpClient.PostAsync(url, jsonContent);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    // Nếu thành công, bạn có thể đọc nội dung phản hồi nếu cần
+                    string responseContent = await response.Content.ReadAsStringAsync();
+                    // Bạn có thể ghi ra responseContent nếu muốn debug
+                    Console.WriteLine(responseContent);
+                    return true;
+                }
+                else
+                {
+                    // Nếu không thành công, bạn có thể ghi lỗi
+                    string errorResponse = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"Error response: {errorResponse}");
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                // Nếu có ngoại lệ, bạn có thể xử lý hoặc log lỗi
+                Console.WriteLine($"Exception: {ex.Message}");
+                return false;
+            }
+
         }
 
     }
