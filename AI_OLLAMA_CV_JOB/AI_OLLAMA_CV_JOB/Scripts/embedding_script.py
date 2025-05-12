@@ -1,5 +1,5 @@
 ﻿from fastapi import FastAPI, HTTPException, UploadFile, File
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from chromadb import PersistentClient
 from sentence_transformers import SentenceTransformer
 import fitz  # PyMuPDF
