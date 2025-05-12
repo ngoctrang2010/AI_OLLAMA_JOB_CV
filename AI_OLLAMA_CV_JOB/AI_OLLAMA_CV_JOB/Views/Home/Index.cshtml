@@ -1,4 +1,4 @@
-﻿@model IEnumerable<AI_OLLAMA_CV_JOB.Models.CongViec>
+﻿@model PaginatedList<AI_OLLAMA_CV_JOB.Models.CongViec>
 @{
     ViewData["Title"] = "Trang chủ việc làm";
 }
@@ -23,10 +23,10 @@
         height: 100%;
     }
 
-    .job-card:hover {
-        transform: translateY(-10px);
-        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
-    }
+        .job-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
 
     .card-badge {
         position: absolute;
@@ -58,11 +58,11 @@
         color: #6c757d;
     }
 
-    .info-row i {
-        width: 20px;
-        margin-right: 10px;
-        color: #6a11cb;
-    }
+        .info-row i {
+            width: 20px;
+            margin-right: 10px;
+            color: #6a11cb;
+        }
 
     .view-btn {
         background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
@@ -76,11 +76,11 @@
         margin-top: 10px;
     }
 
-    .view-btn:hover {
-        box-shadow: 0 5px 15px rgba(37, 117, 252, 0.4);
-        transform: translateY(-2px);
-        color: white;
-    }
+        .view-btn:hover {
+            box-shadow: 0 5px 15px rgba(37, 117, 252, 0.4);
+            transform: translateY(-2px);
+            color: white;
+        }
 
     .description-box {
         height: 60px;
@@ -89,15 +89,15 @@
         position: relative;
     }
 
-    .description-box::after {
-        content: "";
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        height: 40%;
-        width: 100%;
-        background: linear-gradient(transparent, white);
-    }
+        .description-box::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 40%;
+            width: 100%;
+            background: linear-gradient(transparent, white);
+        }
 
     .search-box {
         background: white;
@@ -109,16 +109,16 @@
         display: flex;
     }
 
-    .search-box input {
-        border: none;
-        padding: 10px 20px;
-        flex: 1;
-        border-radius: 50px;
-    }
+        .search-box input {
+            border: none;
+            padding: 10px 20px;
+            flex: 1;
+            border-radius: 50px;
+        }
 
-    .search-box input:focus {
-        outline: none;
-    }
+            .search-box input:focus {
+                outline: none;
+            }
 
     .search-btn {
         background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
@@ -129,9 +129,9 @@
         font-weight: 600;
     }
 
-    .search-btn:hover {
-        box-shadow: 0 5px 15px rgba(37, 117, 252, 0.4);
-    }
+        .search-btn:hover {
+            box-shadow: 0 5px 15px rgba(37, 117, 252, 0.4);
+        }
 
     .pagination .page-link {
         border-radius: 50px;
@@ -155,10 +155,16 @@
         animation: fadeIn 0.5s ease-in-out;
     }
 
-    @* Sửa cú pháp keyframes trong Razor *@
     @@keyframes fadeIn {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 </style>
 
@@ -166,7 +172,7 @@
 <div class="job-title-section text-center fade-in">
     <h1 class="fw-bold mb-2">Danh sách công việc tuyển dụng</h1>
     <p class="lead">Khám phá cơ hội nghề nghiệp phù hợp với bạn</p>
-    
+
     <div class="search-box">
         <input type="text" placeholder="Tìm kiếm công việc...">
         <button class="search-btn">
@@ -184,42 +190,42 @@
         <button class="btn btn-sm btn-light rounded-pill px-3 shadow-sm">Tài chính</button>
         <button class="btn btn-sm btn-light rounded-pill px-3 shadow-sm">Thiết kế</button>
     </div>
-    <a class="btn btn-info" href="javascript:void(0);" onclick="fetchDataForAI()">
-        LẤY DỮ LIỆU CHO AI
-    </a>
-
 
     <!-- Job Cards -->
     <div class="row g-4">
-        @{int delay = 3;}
+        @{
+            int delay = 3;
+        }
         @foreach (var cv in Model)
         {
-            <div class="col-lg-6 mb-4 fade-in" style="animation-delay: 0.@(delay)s">
-                @{delay = delay >= 9 ? 3 : delay + 1;}
+            <div class="col-lg-3 mb-4 fade-in" style="animation-delay: 0.@(delay)s">
+                @{
+                    delay = delay >= 9 ? 3 : delay + 1;
+                }
                 <div class="job-card">
                     <div class="card-body position-relative">
                         <span class="card-badge">Mới</span>
                         <h5 class="card-title">@cv.TenCongViec</h5>
-                        
+
                         <div class="info-row">
                             <i class="bi bi-geo-alt-fill"></i>
                             <span>@cv.DiaDiemThoiGian</span>
                         </div>
-                        
+
                         <div class="info-row">
                             <i class="bi bi-cash-coin"></i>
                             <span>@cv.MucLuong</span>
                         </div>
-                        
+
                         <div class="info-row">
                             <i class="bi bi-briefcase-fill"></i>
                             <span>@cv.KinhNghiem năm kinh nghiệm</span>
                         </div>
-                        
+
                         <div class="description-box">
                             <p class="mb-0">@cv.MoTaCongViec</p>
                         </div>
-                        
+
                         <div class="d-flex justify-content-between align-items-center">
                             <a href="@Url.Action("DetailJob", "Home", new { id = cv.Id })" class="view-btn text-decoration-none">
                                 Xem chi tiết
@@ -232,6 +238,32 @@
                 </div>
             </div>
         }
+    </div>
+
+    <!-- Pagination -->
+    <div class="d-flex justify-content-center mt-4">
+        <ul class="pagination">
+            @if (Model.HasPreviousPage)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="@Url.Action("Index", new { page = Model.PageNumber - 1 })">«</a>
+                </li>
+            }
+
+            @for (var i = 1; i <= Model.TotalPages; i++)
+            {
+                <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                    <a class="page-link" href="@Url.Action("Index", new { page = i })">@i</a>
+                </li>
+            }
+
+            @if (Model.HasNextPage)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="@Url.Action("Index", new { page = Model.PageNumber + 1 })">»</a>
+                </li>
+            }
+        </ul>
     </div>
 </div>
 

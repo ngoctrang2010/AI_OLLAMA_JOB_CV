@@ -1,5 +1,4 @@
-﻿
-from flask import Flask, request, jsonify
+﻿from flask import Flask, request, jsonify
 from sentence_transformers import SentenceTransformer
 from chromadb import PersistentClient
 import os
@@ -309,7 +308,9 @@ def ask_ai():
         ollama_response = requests.post("http://localhost:11434/api/generate", json={
             "model": "mistral",
             "prompt": prompt,
-            "stream": False
+            "stream": False,
+            "temperature": 0.1
+
         })
         answer = ollama_response.json().get("response", "Không có phản hồi từ mô hình.")
     except Exception as e:

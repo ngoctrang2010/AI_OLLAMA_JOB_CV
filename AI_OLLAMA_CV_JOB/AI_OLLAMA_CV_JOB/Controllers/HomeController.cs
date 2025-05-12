@@ -42,10 +42,19 @@ namespace AI_OLLAMA_CV_JOB.Controllers
             public List<ViTriLamViec> ViTriLamViecs { get; set; } = new List<ViTriLamViec>();
             public List<CvUngVien> CvUngViens { get; set; } = new List<CvUngVien>();
         }
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1)
         {
+            int pageSize = 12;
+
             var CongViecs = await congViecRepository.GetTatCaCongViec();
-            return View(CongViecs);
+
+            var totalItems = CongViecs.Count();
+            var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
+
+            var pagedCongViecs = CongViecs.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+            var model = new PaginatedList<CongViec>(pagedCongViecs, totalItems, page, pageSize);
+            return View(model);
         }
 
         public async Task<IActionResult> DetailJob(int id)
