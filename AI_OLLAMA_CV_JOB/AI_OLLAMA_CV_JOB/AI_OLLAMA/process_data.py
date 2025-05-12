@@ -7,7 +7,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 import requests
 from concurrent.futures import ThreadPoolExecutor
 from flask_cors import CORS
-
+import json
+import uuid
 
 app = Flask(__name__)
 model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
@@ -28,7 +29,7 @@ def delete_all_collections():
     collections = client.list_collections()
     for collection in collections:
         client.delete_collection(collection.name)
-
+'''
 def format_congviec(cv):
     return (
         f"🔹 ID: {cv.get('Id', '')}\n"
@@ -62,6 +63,39 @@ def format_cvungvien(cv):
         f"🔹 Mức lương: {cv.get('MucLuong', '')}\n"
         f"🔹 Link CV: {cv.get('DuongDanCV', '')}"
     ).strip()
+'''
+def format_congviec_json(cv):
+    return {
+        "ID": cv.get("Id", ""),
+        "TenCongViec": cv.get("TenCongViec", ""),
+        "MoTaCongViec": cv.get("MoTaCongViec", ""),
+        "YeuCauCongViec": cv.get("YeuCauCongViec", ""),
+        "PhucLoi": cv.get("PhucLoi", ""),
+        "DiaDiem": cv.get("DiaDiem", ""),
+        "ThoiGianLamViec": cv.get("ThoiGianLamViec", ""),
+        "CachThucUngTuyen": cv.get("CachThucUngTuyen", ""),
+        "MucLuong": cv.get("MucLuong", ""),
+        "HanNop": cv.get("HanNop", ""),
+        "TrinhDoHocVan": cv.get("TrinhDoHocVan", ""),
+        "YeuCauKinhNghiem": cv.get("YeuCauKinhNghiem", ""),
+        "TenCty": cv.get("TenCty", "")
+    }
+def format_cvungvien_json(cv):
+    return {
+        "ID": cv.get("Id", ""),
+        "HoTen": cv.get("HoTen", ""),
+        "ViTriUngTuyen1": cv.get("ViTriUngTuyen1", ""),
+        "ViTriUngTuyen2": cv.get("ViTriUngTuyen2", ""),
+        "TrinhDoHocVan": cv.get("TrinhDoHocVan", ""),
+        "KinhNghiemLamViec": cv.get("KinhNghiemLamViec", ""),
+        "DuAn": cv.get("DuAn", ""),
+        "ChungChi": cv.get("ChungChi", ""),
+        "TimViecTai": cv.get("TimViecTai", ""),
+        "HinhThucLamViec": cv.get("HinhThucLamViec", ""),
+        "MucLuong": cv.get("MucLuong", ""),
+        "DuongDanCV": cv.get("DuongDanCV", "")
+    }
+
 def embed_data(list_data, prefix, format_func):
     try:
         collection = client.get_collection(prefix)
@@ -70,12 +104,15 @@ def embed_data(list_data, prefix, format_func):
 
     new_data = []
     for item in list_data:
-        text = format_func(item)
+        formatted_data = format_func(item)
+        text = json.dumps(formatted_data, ensure_ascii=False)  # chuyển dict thành chuỗi JSON
+        
         if not text.strip():
             continue
+
         emb = model.encode(text).tolist()
         new_data.append({
-            "id": f"{item['Id']}",
+            "id": f"{item.get('Id', str(uuid.uuid4()))}",  # dùng uuid nếu không có Id
             "document": text,
             "embedding": emb
         })
@@ -96,8 +133,8 @@ def process_data():
     ungvien_list = payload.get('Data_UngVien_Chroma', [])
     congviec_list = payload.get('Data_CongViec_Chroma', [])
 
-    cvungvien_embeddings = embed_data(ungvien_list, 'CvUngVien_Collection', format_cvungvien)
-    congviec_embeddings = embed_data(congviec_list, 'CongViec_Collection', format_congviec)
+    cvungvien_embeddings = embed_data(ungvien_list, 'CvUngVien_Collection', format_cvungvien_json)
+    congviec_embeddings = embed_data(congviec_list, 'CongViec_Collection', format_congviec_json)
 
     return jsonify({
         "status": "success",
@@ -243,7 +280,6 @@ def ask_ai():
         "CvUngVien_Collection": "\n".join(f"- {doc}" for doc in grouped["CvUngVien_Collection"]) or "- Không có dữ liệu phù hợp"
     }
     # Prompt tối ưu, hướng dẫn LLM trả lời chính xác
-    print(context_parts)
     prompt = f"""
         📌 Bạn là một trợ lý ảo thân thiện của trang website tuyển dụng JobOne, tên là JobOneAgent, chuyên hỗ trợ người dùng trong hệ thống tuyển dụng trực tuyến.
 
@@ -256,8 +292,8 @@ def ask_ai():
 
              2. **Ưu tiên lọc dữ liệu theo thứ tự sau (nếu có thể):**
                 - (1) Địa điểm làm việc
-                - (2) Tên công việc / vị trí ứng tuyển
-                - (3) Kinh nghiệm, học vấn
+                - (2) Tên công việc / vị trí ứng tuyển, yêu cầu công việc
+                - (3) Kinh nghiệm, học vấn, trình độ học vấn, phúc lợi
                 - (4) Mức lương và thông tin khác
 
              3. **Cách trình bày danh sách:**
@@ -281,28 +317,18 @@ def ask_ai():
 
         🧾 **DỮ LIỆU HỆ THỐNG**
 
-             ### 🧠 DỮ LIỆU CÔNG VIỆC (dùng để gợi ý tìm kiếm công việc cho ứng viên) -  dùng dữ liệu này cho ứng viên:
-             <<<START_CONGVIEC>>>
+             ### 🧠 DANH SÁCH CÔNG VIỆC TRONG HỆ THỐNG:
              {context_parts["CongViec_Collection"]}
-             <<<END_CONGVIEC>>>
 
-             ### 👤 DỮ LIỆU CV ỨNG VIÊN (dùng để tìm ứng viên phù hợp theo yêu cầu của nhà tuyển dụng) - dùng dữ liệu này cho nhà tuyển dụng:
-             <<<START_CVUNGVIEN>>>
+             ### 👤 DANH SÁCH CV CỦA ỨNG VIÊN TRONG HỆ THỐNG
              {context_parts["CvUngVien_Collection"]}
-             <<<END_CVUNGVIEN>>>
 
-         --- 
-
-        🧾 **Lịch sử trò chuyện**: {history_commu}
-            
-         --- 
-
-         **LƯU Ý QUAN TRỌNG:** Nếu không có dữ liệu nào phù hợp, hoặc nếu thông tin không đủ để trả lời, bạn phải nói rõ: **"Hiện tại, tôi chưa có thông tin phù hợp trong hệ thống."**
+         **LƯU Ý QUAN TRỌNG:** Nếu không có dữ liệu nào phù hợp, hoặc nếu thông tin không đủ để trả lời, bạn phải nói rõ: **"Hiện tại, hệ thống chưa có thông tin phù hợp với yêu cầu của bạn."**
 
          ❓ **Câu hỏi người dùng:** Tôi là {role}. {question}.
     """.strip()
 
-
+    '''
     # Gọi mô hình Ollama
     try:
         ollama_response = requests.post("http://localhost:11434/api/generate", json={
@@ -315,11 +341,15 @@ def ask_ai():
         answer = ollama_response.json().get("response", "Không có phản hồi từ mô hình.")
     except Exception as e:
         return jsonify({"error": f"Lỗi khi gọi Ollama API: {str(e)}"}), 500
-
+    
     return jsonify({
         "answer": answer
     })
-
+    '''
+    print(prompt)
+    return jsonify({
+        "answer": "Hehe, bạn đợi tôi tí nhé, tôi đang xem xét. +1 Ly trà sữa thì sẽ nhanh hơn nhé :D"
+    })
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
