@@ -244,7 +244,7 @@ def ask_ai():
         "CvUngVien_Collection": "\n".join(f"- {doc}" for doc in grouped["CvUngVien_Collection"]) or "- Không có dữ liệu phù hợp"
     }
     # Prompt tối ưu, hướng dẫn LLM trả lời chính xác
-    
+    print(context_parts)
     prompt = f"""
         📌 Bạn là một trợ lý ảo thân thiện của trang website tuyển dụng JobOne, tên là JobOneAgent, chuyên hỗ trợ người dùng trong hệ thống tuyển dụng trực tuyến.
 
@@ -276,6 +276,7 @@ def ask_ai():
                 - Không lặp lại ý nghĩa trong câu trả lời, không tự nếu các nguyên tắc phản hồi trong phần trả lời.
                 - Nếu là ứng viên thì chỉ trả lời liên quan đến công việc đang tuyển dụng, thông tin công ty đang tuyển dụng.
                 - Nếu là nhà tuyển dụng thì chỉ trả lời liên quan đến CV của ứng viên.
+                - Nếu là chào hỏi, hỏi thăm: Trả lời thân thiện, tự nhiên, mang tính cá nhân. Không cần liệt kê dữ liệu hệ thống.
 
          --- 
 
@@ -305,9 +306,8 @@ def ask_ai():
 
     # Gọi mô hình Ollama
     try:
-        print(prompt)
         ollama_response = requests.post("http://localhost:11434/api/generate", json={
-            "model": "llama3",
+            "model": "mistral",
             "prompt": prompt,
             "stream": False
         })
