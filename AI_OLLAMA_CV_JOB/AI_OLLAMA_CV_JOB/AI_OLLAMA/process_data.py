@@ -78,7 +78,7 @@ def format_congviec_json(cv):
         "HanNop": cv.get("HanNop", ""),
         "TrinhDoHocVan": cv.get("TrinhDoHocVan", ""),
         "YeuCauKinhNghiem": cv.get("YeuCauKinhNghiem", ""),
-        "TenCty": cv.get("TenCty", "")
+        "TenCongty": cv.get("TenCty", "")
     }
 def format_cvungvien_json(cv):
     return {
@@ -219,7 +219,7 @@ def ask_ai():
     question = request.args.get("question", "")
     role = request.args.get("role", "")
     history_commu = request.args.get("history_communication", "")
-    print(history_commu)
+ 
     if not question.strip():
         return jsonify({"error": "Missing question"}), 400
 
@@ -285,7 +285,7 @@ def ask_ai():
 
         🎯 **QUY TẮC BẮT BUỘC – PHẢI TUÂN THỦ 100%:**
 
-             1. **TUYỆT ĐỐI CHỈ TRẢ LỜI DỰA TRÊN DỮ LIỆU CỦA HỆ THỐNG ĐỂ TRẢ LỜI. KHÔNG ĐƯỢC SUY DIỄN, BỔ SUNG, HAY BỊA DỮ LIỆU.**
+             1. **TUYỆT ĐỐI TÔN TRỌNG DỮ LIỆU HỆ THỐNG. KHÔNG ĐƯỢC SUY DIỄN, BỔ SUNG, HAY THAY ĐỔI DỮ LIỆU.**
                 - Nếu dữ liệu không đủ hoặc không tìm thấy phù hợp, hãy trả lời: **"Hiện tại, tôi chưa có thông tin phù hợp trong hệ thống."**
                 - Không được sử dụng kiến thức từ các nguồn khác hoặc dữ liệu huấn luyện.
                 - Không hiển thị các giá trị rỗng hoặc `"None"` và không hiển thị các trường kỹ thuật như `ID`, `internal code`, v.v.
@@ -297,15 +297,15 @@ def ask_ai():
                 - (4) Mức lương và thông tin khác
 
              3. **Cách trình bày danh sách:**
-                - Nếu là **danh sách công việc**, mỗi dòng dùng mẫu:
-                  👉 `Tên công việc – Nơi làm việc – Mô tả – Mức lương – Cách thức ứng tuyển`
-                - Nếu là **danh sách CV ứng viên**, mỗi dòng dùng mẫu:
-                  👉 `Tên ứng viên – Vị trí ứng tuyển – Học vấn – Kinh nghiệm – Link CV`
+                - Nếu là **danh sách công việc**, mỗi dòng sẽ chứa các thông tin sau:
+                  👉 `TenCongViec - TenCongty – DiaDiem – MoTa – MucLuong – CachThucUngTuyen - YeuCauKinhNghiem - HanNop`
+                - Nếu là **danh sách CV ứng viên**, mỗi dòng sẽ chứa các thông tin sau:
+                  👉 `HoTen – ViTriUngTuyen1 – TrinhDoHocVan – KinhNghiemLamViec`
                 - Tối đa 5 dòng, sau đó nói:  
                   👉 **"Còn nhiều kết quả khác trong hệ thống..."**
 
              4**Cách phản hồi:**
-                - Trả lời bằng **tiếng VIỆT**.
+                - Trả lời hoàn toàn bằng **tiếng VIỆT** (TenCongty, TenCongViec thì giữ nguyên như trong dữ liệu hệ thống).
                 - Ngôn ngữ thân thiện, lịch sự, ngắn gọn, đúng trọng tâm, NGHIÊM TÚC, KHÔNG ĐÙA GIỠN, TUÂN THỦ TOÀN BỘ CÁC QUY TẮC.
                 - Không dịch từ tiếng Anh sang tiếng Việt và ngược lại: **tên công việc, công ty, vị trí ứng tuyển**.
                 - Không lặp lại ý nghĩa trong câu trả lời, không tự nếu các nguyên tắc phản hồi trong phần trả lời.
@@ -315,28 +315,26 @@ def ask_ai():
 
          --- 
 
-        🧾 **DỮ LIỆU HỆ THỐNG**
+        🧾 **DỮ LIỆU HỆ THỐNG (DẠNG JSON)**
 
-             ### 🧠 DANH SÁCH CÔNG VIỆC TRONG HỆ THỐNG:
+             ### 🧠 DANH SÁCH CÔNG VIỆC TRONG HỆ THỐNG (Dùng khi người hỏi là ứng viên): 
              {context_parts["CongViec_Collection"]}
 
-             ### 👤 DANH SÁCH CV CỦA ỨNG VIÊN TRONG HỆ THỐNG
+             ### 👤 DANH SÁCH CV CỦA ỨNG VIÊN TRONG HỆ THỐNG (Dùng khi người hỏi là nhà tuyển dụng):
              {context_parts["CvUngVien_Collection"]}
 
          **LƯU Ý QUAN TRỌNG:** Nếu không có dữ liệu nào phù hợp, hoặc nếu thông tin không đủ để trả lời, bạn phải nói rõ: **"Hiện tại, hệ thống chưa có thông tin phù hợp với yêu cầu của bạn."**
 
-         ❓ **Câu hỏi người dùng:** Tôi là {role}. {question}.
+         ❓ **Câu hỏi người dùng:** Tôi là {role}. Dựa vào dữ liệu hệ thống dangj JSON trả lời câu hỏi: {question}.
     """.strip()
 
-    '''
+    print(prompt)
     # Gọi mô hình Ollama
     try:
         ollama_response = requests.post("http://localhost:11434/api/generate", json={
-            "model": "mistral",
+            "model": "openhermes",
             "prompt": prompt,
-            "stream": False,
-            "temperature": 0.1
-
+            "stream": False
         })
         answer = ollama_response.json().get("response", "Không có phản hồi từ mô hình.")
     except Exception as e:
@@ -344,11 +342,6 @@ def ask_ai():
     
     return jsonify({
         "answer": answer
-    })
-    '''
-    print(prompt)
-    return jsonify({
-        "answer": "Hehe, bạn đợi tôi tí nhé, tôi đang xem xét. +1 Ly trà sữa thì sẽ nhanh hơn nhé :D"
     })
 
 if __name__ == '__main__':

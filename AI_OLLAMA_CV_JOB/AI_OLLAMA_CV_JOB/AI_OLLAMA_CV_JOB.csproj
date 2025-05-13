@@ -22,6 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="AI_OLLAMA\wwwroot\Chroma_data\" />
     <Folder Include="chroma_data\" />
     <Folder Include="Helpers\" />
     <Folder Include="Scripts\chroma_data\" />
