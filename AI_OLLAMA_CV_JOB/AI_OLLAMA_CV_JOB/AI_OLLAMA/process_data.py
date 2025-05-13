@@ -9,6 +9,8 @@ from concurrent.futures import ThreadPoolExecutor
 from flask_cors import CORS
 import json
 import uuid
+import requests
+
 
 app = Flask(__name__)
 model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
@@ -17,6 +19,7 @@ CORS(app)
 client = PersistentClient(
     path="./wwwroot/Chroma_data"
 )
+session = requests.Session()
 @app.route('/delete-all-data', methods=['GET'])
 def delete_all_data():
     try:
@@ -223,6 +226,11 @@ def ask_ai():
     if not question.strip():
         return jsonify({"error": "Missing question"}), 400
 
+
+    prompt = f"""Tôi muốn bạn rút ra các từ khoá đại diện cho: tên công việc, kỹ năng làm việc, phúc lợi việc làm, địa điểm làm việc, thời gian làm việc, mức lương, trình độ học vấn, kinh nghiệm làm việc của 1 công việc, chỉ cần liệt kê các thông tin tôi cần(tên công việc, kỹ năng làm việc, phúc lợi việc làm, địa điểm làm việc, thời gian làm việc, mức lương, trình độ học vấn, kinh nghiệm làm việc), không cần nhắc đến những thông tin khác. Giờ thì làm theo hướng dẫn đó của tôi, bạn hãy lọc các từ khoá quan trọng trong câu sau:{question}"""
+    print(prompt)
+    question = call_ollama_model(prompt)
+
     # Mã hóa câu hỏi
     try:
         question_emb = model.encode(question).tolist()
@@ -273,13 +281,13 @@ def ask_ai():
     for item in results:
         if item["collection"] in grouped:
             grouped[item["collection"]].append(item["document"])
-
     # Format context rõ ràng
     context_parts = {
         "CongViec_Collection": "\n".join(f"- {doc}" for doc in grouped["CongViec_Collection"]) or "- Không có dữ liệu phù hợp",
         "CvUngVien_Collection": "\n".join(f"- {doc}" for doc in grouped["CvUngVien_Collection"]) or "- Không có dữ liệu phù hợp"
     }
     # Prompt tối ưu, hướng dẫn LLM trả lời chính xác
+    prompt = ""
     prompt = f"""
         📌 Bạn là một trợ lý ảo thân thiện của trang website tuyển dụng JobOne, tên là JobOneAgent, chuyên hỗ trợ người dùng trong hệ thống tuyển dụng trực tuyến.
 
@@ -320,7 +328,7 @@ def ask_ai():
              ### 🧠 DANH SÁCH CÔNG VIỆC TRONG HỆ THỐNG (Dùng khi người hỏi là ứng viên): 
              {context_parts["CongViec_Collection"]}
 
-             ### 👤 DANH SÁCH CV CỦA ỨNG VIÊN TRONG HỆ THỐNG (Dùng khi người hỏi là nhà tuyển dụng):
+             ### 👤 DANH SÁCH CV CỦA ỨNG VIÊN TRONG HỆ THỐNG (Dùng khi người hỏi là nhà tuyển dụng, nếu là ứng viên thì không cần xem dữ liệu này):
              {context_parts["CvUngVien_Collection"]}
 
          **LƯU Ý QUAN TRỌNG:** Nếu không có dữ liệu nào phù hợp, hoặc nếu thông tin không đủ để trả lời, bạn phải nói rõ: **"Hiện tại, hệ thống chưa có thông tin phù hợp với yêu cầu của bạn."**
@@ -329,20 +337,33 @@ def ask_ai():
     """.strip()
 
     print(prompt)
-    # Gọi mô hình Ollama
-    try:
-        ollama_response = requests.post("http://localhost:11434/api/generate", json={
-            "model": "openhermes",
-            "prompt": prompt,
-            "stream": False
-        })
-        answer = ollama_response.json().get("response", "Không có phản hồi từ mô hình.")
-    except Exception as e:
-        return jsonify({"error": f"Lỗi khi gọi Ollama API: {str(e)}"}), 500
     
+    answer = call_ollama_model(prompt)
+
+    if answer is None:
+        return jsonify({"error": f"Lỗi khi gọi Ollama API: {error}"}), 500
+
     return jsonify({
         "answer": answer
     })
+
+def call_ollama_model(prompt):
+    try:
+        response = session.post("http://localhost:11434/api/generate", json={
+            "model": "zephyr",
+            "prompt": prompt,
+            "stream": False
+        }, timeout=60)
+        
+        response.raise_for_status()  # phát hiện lỗi HTTP sớm
+        answer = response.json().get("response", "Không có phản hồi từ mô hình.")
+        return answer
+     except requests.exceptions.Timeout:
+        return "⏰ Quá thời gian đợi phản hồi."
+    except requests.exceptions.RequestException as e:
+        return f"Lỗi khi gọi Ollama API: {str(e)}"
+
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
