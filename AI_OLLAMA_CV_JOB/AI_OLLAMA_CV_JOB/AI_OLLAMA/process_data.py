@@ -57,6 +57,7 @@ def format_cvungvien(cv):
         f"🔹 Tên ứng viên: {cv.get('HoTen', '')}\n"
         f"🔹 Vị trí ứng tuyển 1: {cv.get('ViTriUngTuyen1', '')}\n"
         f"🔹 Vị trí ứng tuyển 2: {cv.get('ViTriUngTuyen2', '')}\n"
+        f"🔹 Kỹ năng ứng viên: {cv.get('KyNang', '')}\n"
         f"🔹 Học vấn: {cv.get('TrinhDoHocVan', '')}\n"
         f"🔹 Kinh nghiệm làm việc: {cv.get('KinhNghiemLamViec', '')}\n"
         f"🔹 Dự án: {cv.get('DuAn', '')}\n"
@@ -89,6 +90,7 @@ def format_cvungvien_json(cv):
         "HoTen": cv.get("HoTen", ""),
         "ViTriUngTuyen1": cv.get("ViTriUngTuyen1", ""),
         "ViTriUngTuyen2": cv.get("ViTriUngTuyen2", ""),
+        "KyNang": cv.get("KyNang", ""),
         "TrinhDoHocVan": cv.get("TrinhDoHocVan", ""),
         "KinhNghiemLamViec": cv.get("KinhNghiemLamViec", ""),
         "DuAn": cv.get("DuAn", ""),

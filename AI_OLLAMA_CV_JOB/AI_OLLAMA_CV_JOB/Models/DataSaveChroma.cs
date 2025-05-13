@@ -7,6 +7,7 @@
             public int Id { get; set; }
             public string? ViTriUngTuyen1 { get; set; }
             public string? KinhNghiemLamViec { get; set; }
+            public string? KyNang { get; set; }
             public string? DuAn { get; set; }
             public string? ChungChi { get; set; }
             public int Id_UngVien { get; set; }
