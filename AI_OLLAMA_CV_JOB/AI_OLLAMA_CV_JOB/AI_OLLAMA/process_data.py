@@ -102,20 +102,27 @@ def format_cvungvien_json(cv):
 def embed_data(list_data, prefix, format_func):
     try:
         collection = client.get_collection(prefix)
+        # Lấy danh sách ID đã tồn tại trong collection
+        existing_ids = set(collection.get()['ids'])
     except:
-        collection = client.create_collection(prefix) 
+        collection = client.create_collection(prefix)
+        existing_ids = set()
 
     new_data = []
     for item in list_data:
+        item_id = str(item.get('Id', uuid.uuid4()))
+        if item_id in existing_ids:
+            continue  # bỏ qua nếu ID đã tồn tại
+
         formatted_data = format_func(item)
-        text = json.dumps(formatted_data, ensure_ascii=False)  # chuyển dict thành chuỗi JSON
-        
+        text = json.dumps(formatted_data, ensure_ascii=False)
+
         if not text.strip():
             continue
 
         emb = model.encode(text).tolist()
         new_data.append({
-            "id": f"{item.get('Id', str(uuid.uuid4()))}",  # dùng uuid nếu không có Id
+            "id": item_id,
             "document": text,
             "embedding": emb
         })
@@ -126,6 +133,7 @@ def embed_data(list_data, prefix, format_func):
             embeddings=[data["embedding"] for data in new_data],
             metadatas=[{"document": data["document"], "id": data["id"]} for data in new_data]
         )
+
 
     return new_data
 
@@ -226,14 +234,16 @@ def ask_ai():
     if not question.strip():
         return jsonify({"error": "Missing question"}), 400
 
-
-    prompt = f"""Tôi muốn bạn rút ra các từ khoá đại diện cho: tên công việc, kỹ năng làm việc, phúc lợi việc làm, địa điểm làm việc, thời gian làm việc, mức lương, trình độ học vấn, kinh nghiệm làm việc của 1 công việc, chỉ cần liệt kê các thông tin tôi cần(tên công việc, kỹ năng làm việc, phúc lợi việc làm, địa điểm làm việc, thời gian làm việc, mức lương, trình độ học vấn, kinh nghiệm làm việc), không cần nhắc đến những thông tin khác. Giờ thì làm theo hướng dẫn đó của tôi, bạn hãy lọc các từ khoá quan trọng trong câu sau:{question}"""
+    prompt = f"""Tôi muốn bạn rút ra các từ khoá đại diện cho: Lĩnh vực công việc, tên công việc, kỹ năng làm việc, phúc lợi việc làm, địa điểm làm việc, thời gian làm việc, mức lương, trình độ học vấn, kinh nghiệm làm việc của 1 công việc.
+                Chỉ cần liệt kê các thông tin tôi cần(Lĩnh vực công việc, tên công việc ,kỹ năng làm việc, phúc lợi việc làm, địa điểm làm việc, thời gian làm việc, mức lương, trình độ học vấn, kinh nghiệm làm việc). Gói các thông tin vừa liệt kê thành JSON.***Chỉ cần JSON. Hãy lượt bỏ các thông tin dư thừa khác***
+                Nếu không có thông tin cho mục trên thì bỏ qua mục đó, không cần nhắc đến những thông tin khác.
+                Giờ thì làm theo hướng dẫn đó của tôi, bạn hãy lọc các từ khoá quan trọng trong câu sau:{question}"""
     print(prompt)
-    question = call_ollama_model(prompt)
-
+    question_AI = call_ollama_model(prompt)
+    print(question_AI)
     # Mã hóa câu hỏi
     try:
-        question_emb = model.encode(question).tolist()
+        question_emb = model.encode(question_AI).tolist()
     except Exception as e:
         return jsonify({"error": f"Không thể mã hóa câu hỏi: {str(e)}"}), 500
 
@@ -249,7 +259,7 @@ def ask_ai():
         try:
             result = collection.query(
                 query_embeddings=[question_emb],
-                n_results=10,
+                n_results=15,
                 include=["metadatas", "distances"]
             )
             documents = result.get("metadatas", [[]])[0]
@@ -287,6 +297,7 @@ def ask_ai():
         "CvUngVien_Collection": "\n".join(f"- {doc}" for doc in grouped["CvUngVien_Collection"]) or "- Không có dữ liệu phù hợp"
     }
     # Prompt tối ưu, hướng dẫn LLM trả lời chính xác
+    
     prompt = ""
     prompt = f"""
         📌 Bạn là một trợ lý ảo thân thiện của trang website tuyển dụng JobOne, tên là JobOneAgent, chuyên hỗ trợ người dùng trong hệ thống tuyển dụng trực tuyến.
@@ -313,10 +324,10 @@ def ask_ai():
                   👉 **"Còn nhiều kết quả khác trong hệ thống..."**
 
              4**Cách phản hồi:**
-                - Trả lời hoàn toàn bằng **tiếng VIỆT** (TenCongty, TenCongViec thì giữ nguyên như trong dữ liệu hệ thống).
+                - Trả lời hoàn toàn bằng **tiếng VIỆT** có dấu câu (TenCongty, TenCongViec thì giữ nguyên như trong dữ liệu hệ thống).
                 - Ngôn ngữ thân thiện, lịch sự, ngắn gọn, đúng trọng tâm, NGHIÊM TÚC, KHÔNG ĐÙA GIỠN, TUÂN THỦ TOÀN BỘ CÁC QUY TẮC.
-                - Không dịch từ tiếng Anh sang tiếng Việt và ngược lại: **tên công việc, công ty, vị trí ứng tuyển**.
                 - Không lặp lại ý nghĩa trong câu trả lời, không tự nếu các nguyên tắc phản hồi trong phần trả lời.
+                - Không được nhắc đến các trang website hoặc ứng dụng tuyển dụng việc làm khác.
                 - Nếu là ứng viên thì chỉ trả lời liên quan đến công việc đang tuyển dụng, thông tin công ty đang tuyển dụng.
                 - Nếu là nhà tuyển dụng thì chỉ trả lời liên quan đến CV của ứng viên.
                 - Nếu là chào hỏi, hỏi thăm: Trả lời thân thiện, tự nhiên, mang tính cá nhân. Không cần liệt kê dữ liệu hệ thống.
@@ -333,16 +344,16 @@ def ask_ai():
 
          **LƯU Ý QUAN TRỌNG:** Nếu không có dữ liệu nào phù hợp, hoặc nếu thông tin không đủ để trả lời, bạn phải nói rõ: **"Hiện tại, hệ thống chưa có thông tin phù hợp với yêu cầu của bạn."**
 
-         ❓ **Câu hỏi người dùng:** Tôi là {role}. Dựa vào dữ liệu hệ thống dangj JSON trả lời câu hỏi: {question}.
+         ❓ **Câu hỏi người dùng:** Tôi là {role}. Dựa vào dữ liệu hệ thống dạng JSON trả lời câu hỏi: {question}.
     """.strip()
 
     print(prompt)
     
     answer = call_ollama_model(prompt)
-
+    
     if answer is None:
         return jsonify({"error": f"Lỗi khi gọi Ollama API: {error}"}), 500
-
+    
     return jsonify({
         "answer": answer
     })
@@ -350,15 +361,15 @@ def ask_ai():
 def call_ollama_model(prompt):
     try:
         response = session.post("http://localhost:11434/api/generate", json={
-            "model": "zephyr",
+            "model": "openhermes",
             "prompt": prompt,
             "stream": False
-        }, timeout=60)
+        }, timeout=120)
         
         response.raise_for_status()  # phát hiện lỗi HTTP sớm
         answer = response.json().get("response", "Không có phản hồi từ mô hình.")
         return answer
-     except requests.exceptions.Timeout:
+    except requests.exceptions.Timeout:
         return "⏰ Quá thời gian đợi phản hồi."
     except requests.exceptions.RequestException as e:
         return f"Lỗi khi gọi Ollama API: {str(e)}"
