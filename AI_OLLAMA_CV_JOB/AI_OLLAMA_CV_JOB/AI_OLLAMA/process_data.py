@@ -235,12 +235,60 @@ def ask_ai():
  
     if not question.strip():
         return jsonify({"error": "Missing question"}), 400
+    
+    if role == "ỨNG VIÊN":
+        '''
+        prompt = f"""Tôi muốn bạn rút ra các từ khoá đại diện cho: Lĩnh vực công việc, tên công việc, kỹ năng làm việc, phúc lợi việc làm, địa điểm làm việc, thời gian làm việc, mức lương, trình độ học vấn, kinh nghiệm làm việc của 1 công việc.
+                    Chỉ cần liệt kê các thông tin tôi cần(Lĩnh vực công việc, tên công việc ,kỹ năng làm việc, phúc lợi việc làm, địa điểm làm việc, thời gian làm việc, mức lương, trình độ học vấn, kinh nghiệm làm việc). Gói các thông tin vừa liệt kê thành JSON.***Chỉ cần JSON. Hãy lượt bỏ các thông tin dư thừa khác***
+                    Nếu không có thông tin cho mục trên thì bỏ qua mục đó, không cần nhắc đến những thông tin khác.
+                    Giờ thì làm theo hướng dẫn đó của tôi, bạn hãy lọc các từ khoá quan trọng trong câu sau:{question}"""
+        '''
+        prompt = f"""Tôi cần bạn trích xuất các từ khóa liên quan đến một công việc, bao gồm:tên công việc,mô tả công việc,yêu cầu công việc, phúc lợi, địa điểm, thời gian làm việc,mức lương, trình độ học vấn, yêu cầu kinh nghiệm và tên công ty.
 
-    prompt = f"""Tôi muốn bạn rút ra các từ khoá đại diện cho: Lĩnh vực công việc, tên công việc, kỹ năng làm việc, phúc lợi việc làm, địa điểm làm việc, thời gian làm việc, mức lương, trình độ học vấn, kinh nghiệm làm việc của 1 công việc.
-                Chỉ cần liệt kê các thông tin tôi cần(Lĩnh vực công việc, tên công việc ,kỹ năng làm việc, phúc lợi việc làm, địa điểm làm việc, thời gian làm việc, mức lương, trình độ học vấn, kinh nghiệm làm việc). Gói các thông tin vừa liệt kê thành JSON.***Chỉ cần JSON. Hãy lượt bỏ các thông tin dư thừa khác***
-                Nếu không có thông tin cho mục trên thì bỏ qua mục đó, không cần nhắc đến những thông tin khác.
-                Giờ thì làm theo hướng dẫn đó của tôi, bạn hãy lọc các từ khoá quan trọng trong câu sau:{question}"""
-    print(prompt)
+                    Chỉ liệt kê các thông tin trên (nếu có) và trình bày kết quả dưới dạng JSON. 
+                    ***Chỉ trả về JSON, không thêm thông tin dư thừa hoặc mô tả khác.*** 
+                    Nếu một mục không có thông tin, bỏ qua mục đó.
+
+                    Định dạng JSON mong muốn:
+                    {
+                          "TenCongViec": ,
+                          "MoTaCongViec": ,
+                          "YeuCauCongViec": ,
+                          "PhucLoi": ,
+                          "DiaDiem":,
+                          "ThoiGianLamViec":,
+                          "MucLuong":,
+                          "TrinhDoHocVan":,
+                          "YeuCauKinhNghiem":,
+                          "TenCongty": 
+                    }
+
+                    Dưới đây là nội dung cần phân tích: {question}
+                    """
+    else: 
+         prompt = f"""Tôi cần bạn trích xuất các từ khóa liên quan đến một thông tin ứng viên đang tìm việc làm, bao gồm:tên công việc,mô tả công việc,yêu cầu công việc, phúc lợi, địa điểm, thời gian làm việc,mức lương, trình độ học vấn, yêu cầu kinh nghiệm và tên công ty.
+
+                    Chỉ liệt kê các thông tin trên (nếu có) và trình bày kết quả dưới dạng JSON. 
+                    ***Chỉ trả về JSON, không thêm thông tin dư thừa hoặc mô tả khác.*** 
+                    Nếu một mục không có thông tin, bỏ qua mục đó.
+
+                    Định dạng JSON mong muốn:
+                    {
+                          "TenCongViec": ,
+                          "MoTaCongViec": ,
+                          "YeuCauCongViec": ,
+                          "PhucLoi": ,
+                          "DiaDiem":,
+                          "ThoiGianLamViec":,
+                          "MucLuong":,
+                          "TrinhDoHocVan":,
+                          "YeuCauKinhNghiem":,
+                          "TenCongty": 
+                    }
+
+                    Dưới đây là nội dung cần phân tích: {question}
+                    """
+
     question_AI = call_ollama_model(prompt)
     print(question_AI)
     # Mã hóa câu hỏi
@@ -346,7 +394,7 @@ def ask_ai():
 
          **LƯU Ý QUAN TRỌNG:** Nếu không có dữ liệu nào phù hợp, hoặc nếu thông tin không đủ để trả lời, bạn phải nói rõ: **"Hiện tại, hệ thống chưa có thông tin phù hợp với yêu cầu của bạn."**
 
-         ❓ **Câu hỏi người dùng:** Tôi là {role}. Dựa vào dữ liệu hệ thống dạng JSON trả lời câu hỏi: {question}.
+         ❓ **Câu hỏi người dùng:** Tôi là {role}. {question}.
     """.strip()
 
     print(prompt)
@@ -363,7 +411,7 @@ def ask_ai():
 def call_ollama_model(prompt):
     try:
         response = session.post("http://localhost:11434/api/generate", json={
-            "model": "openhermes",
+            "model": "llama3-chatqa:8b",
             "prompt": prompt,
             "stream": False
         }, timeout=120)
